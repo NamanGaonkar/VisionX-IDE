@@ -12,9 +12,10 @@ DIST_DIR = BASE_DIR / "dist"
 VISIONX_DIST = DIST_DIR / "VisionX-win32-x64"
 ZIP_PATH = BUILD_DIR / "base-win32-x64.zip"
 ICON_PATH = BUILD_DIR / "icons" / "visionx.ico"
+LOGO_SVG_PATH = BASE_DIR / "src" / "branding" / "visionx-logo.svg"
 
 print("==================================================")
-print("       VisionX IDE - Complete Engine Builder      ")
+print("     VisionX IDE v1.1.0 - Complete Engine Rebuild ")
 print("==================================================")
 
 # 1. Clean and extract
@@ -42,8 +43,6 @@ if bin_dir.exists():
         if "codium" in f.name:
             new_name = f.name.replace("codium", "visionx")
             new_file = bin_dir / new_name
-            print(f"Renaming {f.name} -> {new_name}...")
-            # If text script, patch content
             try:
                 content = f.read_text(encoding="utf-8", errors="ignore")
                 content = content.replace("VSCodium.exe", "VisionX.exe")
@@ -72,7 +71,6 @@ if product_json_path.exists():
     product["reportIssueUrl"] = "https://github.com/NamanGaonkar/VisionX-IDE/issues"
     product["licenseUrl"] = "https://github.com/NamanGaonkar/VisionX-IDE/blob/main/LICENSE"
     
-    # Configure Open VSX extension gallery
     product["extensionsGallery"] = {
         "serviceUrl": "https://open-vsx.org/vscode/gallery",
         "itemUrl": "https://open-vsx.org/vscode/item",
@@ -80,12 +78,14 @@ if product_json_path.exists():
         "controlUrl": "https://raw.githubusercontent.com/EclipseFdn/publish-extensions/refs/heads/master/extension-control/extensions.json"
     }
 
-    # Configuration defaults for default Liquid Glass theme and privacy
     if "configurationDefaults" not in product:
         product["configurationDefaults"] = {}
     product["configurationDefaults"]["workbench.colorTheme"] = "VisionX Liquid Glass"
     product["configurationDefaults"]["telemetry.telemetryLevel"] = "off"
     product["configurationDefaults"]["workbench.startupEditor"] = "welcomePage"
+    product["configurationDefaults"]["window.titleBarStyle"] = "custom"
+    product["configurationDefaults"]["window.menuBarVisibility"] = "classic"
+    product["configurationDefaults"]["workbench.layoutControl.enabled"] = True
 
     with open(product_json_path, "w", encoding="utf-8") as f:
         json.dump(product, f, indent=2)
@@ -115,7 +115,25 @@ if res_win32.exists():
         shutil.copy(png_128, res_win32 / "code_150x150.png")
         shutil.copy(png_128, res_win32 / "code_70x70.png")
 
-# 6. Inject custom extensions (Theme & AI Assistant)
+# 6. Replace ALL blue SVGs (titlebar, welcome, letterpress watermark) with VisionX Logo SVG
+if LOGO_SVG_PATH.exists():
+    print("Replacing all legacy blue SVGs with official VisionX Logo SVG...")
+    logo_svg = LOGO_SVG_PATH.read_text(encoding="utf-8")
+    replaced_count = 0
+    for root, dirs, files in os.walk(VISIONX_DIST):
+        for f in files:
+            if f.endswith(".svg"):
+                p = Path(root) / f
+                try:
+                    txt = p.read_text(encoding="utf-8", errors="ignore")
+                    if "78AEED" in txt or "path6008" in txt or f in ["code-icon.svg", "vscode-icon.svg"]:
+                        p.write_text(logo_svg, encoding="utf-8")
+                        replaced_count += 1
+                except Exception:
+                    pass
+    print(f"Replaced {replaced_count} legacy SVGs with VisionX glowing SVG logo.")
+
+# 7. Inject custom extensions (Theme & AI Assistant)
 ext_dir = VISIONX_DIST / "resources" / "app" / "extensions"
 if ext_dir.exists():
     print("Installing built-in VisionX Liquid Glass Theme...")
@@ -130,75 +148,127 @@ if ext_dir.exists():
         shutil.rmtree(target_ai)
     shutil.copytree(BASE_DIR / "src" / "ai-assistant", target_ai)
 
-# 7. Inject Liquid Glass CSS into workbench stylesheet
+# 8. Inject Liquid Glass CSS into workbench stylesheet (With Rounded Corners & Solid Non-Bleed Titlebar)
 css_path = VISIONX_DIST / "resources" / "app" / "out" / "vs" / "workbench" / "workbench.desktop.main.css"
 if css_path.exists():
-    print("Injecting signature Liquid Glass CSS into workbench stylesheet...")
+    print("Injecting signature Liquid Glass CSS (rounded corners, solid titlebar, glowing symmetry)...")
     glass_css = """
 /* ======================================================== */
-/* VisionX Liquid Glass Signature Cyberpunk Styling         */
+/* VisionX Liquid Glass Symmetrical Aesthetics (v1.1.0)     */
 /* ======================================================== */
 :root {
   --visionx-accent: #ff5500;
   --visionx-accent-glow: rgba(255, 85, 0, 0.4);
   --visionx-gold: #ffaa00;
+  --visionx-bg: #07090e;
 }
 
+/* OPAQUE, SOLID TITLE BAR - NO CONTENT BLEED */
 .monaco-workbench .part.titlebar {
-  background: rgba(5, 7, 12, 0.9) !important;
-  backdrop-filter: blur(16px) !important;
-  border-bottom: 1px solid rgba(255, 85, 0, 0.15) !important;
+  background: #07090e !important;
+  border-bottom: 1px solid rgba(255, 85, 0, 0.25) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6) !important;
+  height: 38px !important;
+  z-index: 100 !important;
 }
 
+.monaco-workbench .part.titlebar .menubar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+}
+
+.monaco-workbench .part.titlebar .menubar .menubar-menu-button {
+  border-radius: 8px !important;
+  padding: 4px 8px !important;
+  margin: 0 1px !important;
+  transition: all 0.2s ease !important;
+}
+
+.monaco-workbench .part.titlebar .menubar .menubar-menu-button:hover,
+.monaco-workbench .part.titlebar .menubar .menubar-menu-button.open {
+  background: rgba(255, 85, 0, 0.2) !important;
+  color: #ffaa00 !important;
+}
+
+/* Rounded Symmetrical Search Center */
+.monaco-workbench .part.titlebar .command-center {
+  border-radius: 12px !important;
+  background: rgba(255, 85, 0, 0.08) !important;
+  border: 1px solid rgba(255, 85, 0, 0.22) !important;
+  transition: all 0.25s ease !important;
+}
+
+.monaco-workbench .part.titlebar .command-center:hover {
+  border-color: #ff5500 !important;
+  box-shadow: 0 0 12px rgba(255, 85, 0, 0.3) !important;
+}
+
+/* Activity Bar & Sidebars */
 .monaco-workbench .part.activitybar {
-  background: rgba(5, 6, 10, 0.95) !important;
-  backdrop-filter: blur(20px) !important;
+  background: #05060a !important;
   border-right: 1px solid rgba(255, 85, 0, 0.15) !important;
 }
 
+.monaco-workbench .part.activitybar .action-item {
+  border-radius: 10px !important;
+  margin: 4px 2px !important;
+}
+
 .monaco-workbench .part.sidebar {
-  background: rgba(8, 10, 16, 0.88) !important;
-  backdrop-filter: blur(16px) !important;
+  background: #080a10 !important;
   border-right: 1px solid rgba(255, 85, 0, 0.15) !important;
 }
 
 .monaco-workbench .part.statusbar {
-  background: rgba(5, 6, 10, 0.98) !important;
-  backdrop-filter: blur(16px) !important;
+  background: #05060a !important;
   border-top: 1px solid rgba(255, 85, 0, 0.25) !important;
   box-shadow: 0 -2px 10px rgba(255, 85, 0, 0.08) !important;
 }
 
-.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab.active {
-  background: rgba(15, 18, 29, 0.95) !important;
-  border-bottom: 2px solid #ff5500 !important;
-  box-shadow: inset 0 1px 0 rgba(255, 136, 0, 0.3), 0 2px 8px rgba(255, 85, 0, 0.25) !important;
-}
-
+/* Rounded Symmetrical Editor Tabs */
 .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab {
-  border-right: 1px solid rgba(255, 85, 0, 0.08) !important;
+  border-radius: 10px 10px 0 0 !important;
+  margin: 4px 2px 0 2px !important;
+  border-right: none !important;
+  transition: all 0.2s ease !important;
 }
 
+.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab.active {
+  background: #0f121d !important;
+  border-bottom: 2px solid #ff5500 !important;
+  box-shadow: 0 0 14px rgba(255, 85, 0, 0.25), inset 0 2px 0 #ff6600 !important;
+}
+
+/* Glowing cursor & focus halos */
 .monaco-editor .cursor {
   background-color: #ff6600 !important;
-  box-shadow: 0 0 8px #ff6600, 0 0 14px rgba(255, 102, 0, 0.7) !important;
+  box-shadow: 0 0 8px #ff6600, 0 0 16px rgba(255, 102, 0, 0.75) !important;
 }
 
+/* Rounded Popups, Menus & Dialogs */
+.monaco-menu .monaco-action-bar,
+.monaco-workbench .quick-input-widget,
+.monaco-workbench .editor-widget {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(255, 85, 0, 0.3) !important;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.7), 0 0 18px rgba(255, 85, 0, 0.15) !important;
+}
+
+/* Rounded Sleek Scrollbars */
 .monaco-scrollable-element > .scrollbar > .slider {
   background: rgba(255, 85, 0, 0.2) !important;
-  border-radius: 4px !important;
+  border-radius: 8px !important;
 }
 .monaco-scrollable-element > .scrollbar > .slider:hover {
-  background: rgba(255, 85, 0, 0.4) !important;
-}
-.monaco-scrollable-element > .scrollbar > .slider.active {
-  background: rgba(255, 85, 0, 0.7) !important;
+  background: rgba(255, 85, 0, 0.45) !important;
 }
 """
     with open(css_path, "a", encoding="utf-8") as f:
         f.write("\n" + glass_css)
 
-# 8. Use rcedit to patch VisionX.exe binary icon and metadata
+# 9. Use rcedit to patch VisionX.exe binary icon and metadata
 rcedit_path = shutil.which("rcedit") or "rcedit.exe"
 print(f"Patching executable with rcedit ({rcedit_path})...")
 try:
@@ -217,11 +287,10 @@ try:
     if res.returncode == 0:
         print("VisionX.exe PE metadata and custom icon applied successfully!")
     else:
-        print("rcedit warning:", res.stderr or res.stdout)
+        print("rcedit note:", res.stderr or res.stdout)
 except Exception as e:
     print("Could not run rcedit:", e)
 
 print("==================================================")
-print(" VisionX IDE build completed successfully!       ")
-print(f" Binary location: {new_exe}                      ")
+print(" VisionX IDE v1.1.0 build completed successfully! ")
 print("==================================================")

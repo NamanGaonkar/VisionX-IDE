@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Outer Glow Filter -->
+    <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+    <!-- Red to Orange/Gold Linear Gradients -->
+    <linearGradient id="v-grad-primary" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff1a1a" />
+      <stop offset="45%" stop-color="#ff4400" />
+      <stop offset="75%" stop-color="#ff9900" />
+      <stop offset="100%" stop-color="#ffcc00" />
+    </linearGradient>
+
+    <linearGradient id="v-grad-outer" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#cc0000" />
+      <stop offset="60%" stop-color="#ff3300" />
+      <stop offset="100%" stop-color="#ffaa00" />
+    </linearGradient>
+
+    <linearGradient id="border-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff2200" />
+      <stop offset="50%" stop-color="#ff7700" />
+      <stop offset="100%" stop-color="#ffcc00" />
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded Squircle Border -->
+  <rect x="24" y="24" width="464" height="464" rx="100" ry="100" fill="#080a10" stroke="url(#border-glow)" stroke-width="12" filter="url(#neon-glow)" />
+
+  <!-- Subtle Cyber Carbon Stripes -->
+  <path d="M60 120 L400 460 M100 80 L440 420 M40 240 L300 500" stroke="#ff4400" stroke-width="2" opacity="0.15" />
+
+  <!-- Outer V Cyber Wings -->
+  <path d="M100 130 L160 130 L256 320 L352 130 L412 130 L286 370 L256 420 L226 370 Z" fill="url(#v-grad-outer)" opacity="0.85" />
+
+  <!-- Main Central V Core -->
+  <path d="M128 144 L196 144 L256 270 L316 144 L384 144 L276 360 L256 400 L236 360 Z" fill="url(#v-grad-primary)" filter="url(#neon-glow)" />
+
+  <!-- Inner Gold Facet Accent -->
+  <path d="M208 240 L256 340 L304 240 L276 240 L256 280 L236 240 Z" fill="#fff3a8" opacity="0.9" />
+
+  <!-- Top Cyber Accent Notches -->
+  <polygon points="120,130 145,130 160,160 135,160" fill="#ff2200" />
+  <polygon points="392,130 367,130 352,160 377,160" fill="#ff2200" />
+</svg>
