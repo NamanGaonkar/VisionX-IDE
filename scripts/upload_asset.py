@@ -7,17 +7,17 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DIST_DIR = BASE_DIR / "dist"
-ZIP_PATH = DIST_DIR / "VisionX-Windows-x64-v1.2.0.zip"
+ZIP_PATH = DIST_DIR / "VisionX-Windows-x64-v1.3.0.zip"
 
 print(f"Reading file: {ZIP_PATH.name} ({ZIP_PATH.stat().st_size / (1024*1024):.2f} MB)...")
 token = subprocess.check_output(['gh', 'auth', 'token'], text=True).strip()
 
-upload_url = "https://uploads.github.com/repos/NamanGaonkar/VisionX-IDE/releases/436758797/assets?name=" + ZIP_PATH.name
+upload_url = "https://uploads.github.com/repos/NamanGaonkar/VisionX-IDE/releases/436834166/assets?name=" + ZIP_PATH.name
 
 with open(ZIP_PATH, 'rb') as f:
     data = f.read()
 
-print(f"Uploading {len(data) / (1024*1024):.2f} MB to GitHub Release v1.2.0...")
+print(f"Uploading {len(data) / (1024*1024):.2f} MB to GitHub Release v1.3.0...")
 req = urllib.request.Request(upload_url, data=data)
 req.add_header('Authorization', f'Bearer {token}')
 req.add_header('Content-Type', 'application/zip')
