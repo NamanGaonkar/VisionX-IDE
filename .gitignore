@@ -1,0 +1,8 @@
+# VisionX Git Ignore
+build/*.zip
+dist/
+__pycache__/
+*.pyc
+.vscode/
+.visionx/
+node_modules/

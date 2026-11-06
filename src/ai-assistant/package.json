@@ -1,0 +1,79 @@
+{
+  "name": "visionx-ai-assistant",
+  "displayName": "VisionX AI Core",
+  "description": "Bring-Your-Own-Key Autonomous AI Coding Assistant for VisionX IDE",
+  "version": "1.0.0",
+  "publisher": "VisionX",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "main": "./extension.js",
+  "categories": [
+    "Machine Learning",
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "visionx-ai",
+          "title": "VisionX AI",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "visionx-ai": [
+        {
+          "type": "webview",
+          "id": "visionx.aiView",
+          "name": "VisionX Intelligence"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "visionx.askAI",
+        "title": "VisionX: Open AI Chat",
+        "category": "VisionX"
+      },
+      {
+        "command": "visionx.explainCode",
+        "title": "VisionX: Explain Selected Code",
+        "category": "VisionX"
+      },
+      {
+        "command": "visionx.refactorCode",
+        "title": "VisionX: Refactor Selection",
+        "category": "VisionX"
+      },
+      {
+        "command": "visionx.fixErrors",
+        "title": "VisionX: Detect & Fix Bugs",
+        "category": "VisionX"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "visionx.explainCode",
+          "group": "visionx@1",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "visionx.refactorCode",
+          "group": "visionx@2",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "visionx.fixErrors",
+          "group": "visionx@3",
+          "when": "editorHasSelection"
+        }
+      ]
+    }
+  }
+}

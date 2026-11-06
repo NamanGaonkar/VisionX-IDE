@@ -1,0 +1,22 @@
+{
+  "name": "visionx-theme-liquid-glass",
+  "displayName": "VisionX Liquid Glass",
+  "description": "The official signature Liquid Glass cyberpunk theme for VisionX IDE",
+  "version": "1.0.0",
+  "publisher": "VisionX",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Themes"
+  ],
+  "contributes": {
+    "themes": [
+      {
+        "label": "VisionX Liquid Glass",
+        "uiTheme": "vs-dark",
+        "path": "./themes/VisionX-Liquid-Glass.json"
+      }
+    ]
+  }
+}
