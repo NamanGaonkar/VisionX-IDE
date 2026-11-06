@@ -1,8 +1,8 @@
 {
   "name": "visionx-ai-assistant",
-  "displayName": "VisionX AI Core",
-  "description": "Dynamic BYOK AI Coding Assistant for VisionX IDE",
-  "version": "1.1.0",
+  "displayName": "VisionX Chat",
+  "description": "Native Copilot-style Chat & Autonomous Coding for VisionX IDE",
+  "version": "1.2.0",
   "publisher": "VisionX",
   "engines": {
     "vscode": "^1.80.0"
@@ -21,7 +21,7 @@
       "activitybar": [
         {
           "id": "visionx-ai",
-          "title": "VisionX AI",
+          "title": "Chat",
           "icon": "media/icon.svg"
         }
       ]
@@ -31,14 +31,14 @@
         {
           "type": "webview",
           "id": "visionx.aiView",
-          "name": "VisionX Intelligence"
+          "name": "Chat"
         }
       ]
     },
     "commands": [
       {
         "command": "visionx.askAI",
-        "title": "VisionX: Open AI Chat",
+        "title": "VisionX: Open Chat",
         "category": "VisionX"
       },
       {
@@ -54,6 +54,11 @@
       {
         "command": "visionx.fixErrors",
         "title": "VisionX: Detect & Fix Bugs",
+        "category": "VisionX"
+      },
+      {
+        "command": "visionx.importFromVSCode",
+        "title": "VisionX: Import Settings & Keybindings from Visual Studio Code",
         "category": "VisionX"
       }
     ],

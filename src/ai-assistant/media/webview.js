@@ -1,26 +1,34 @@
 const vscode = acquireVsCodeApi();
-const chat = document.getElementById('chat');
-const promptInput = document.getElementById('prompt');
+
+const chatMessages = document.getElementById('chat-messages');
+const emptyState = document.getElementById('empty-state');
+const promptInput = document.getElementById('copilot-input');
 const sendBtn = document.getElementById('send-btn');
-const openSettings = document.getElementById('open-settings');
-const closeSettings = document.getElementById('close-settings');
-const settingsModal = document.getElementById('settings-modal');
-const saveSettingsBtn = document.getElementById('save-settings');
-const scanModelsBtn = document.getElementById('scan-models-btn');
-const activeFileBadge = document.getElementById('active-file');
-const activeModelBadge = document.getElementById('active-model');
-const imgInput = document.getElementById('img-input');
-const imgPreview = document.getElementById('image-preview');
-const clearImg = document.getElementById('clear-img');
-const providerSelect = document.getElementById('set-provider');
-const apiKeyInput = document.getElementById('set-api-key');
-const modelSelect = document.getElementById('set-model');
-const modelStatus = document.getElementById('model-status');
-const ollamaGroup = document.getElementById('ollama-url-group');
+const newChatBtn = document.getElementById('new-chat-btn');
+const refreshChatBtn = document.getElementById('refresh-chat-btn');
+const importVscodeBtn = document.getElementById('import-vscode-btn');
+const bannerImportLink = document.getElementById('banner-import-link');
+
+const modelPillBtn = document.getElementById('model-pill-btn');
+const modelPillText = document.getElementById('model-pill-text');
+const modelPopover = document.getElementById('model-popover');
+const popProvider = document.getElementById('pop-provider');
+const popApiKey = document.getElementById('pop-api-key');
+const popModel = document.getElementById('pop-model');
+const popCustomModel = document.getElementById('pop-custom-model');
+const popOllamaRow = document.getElementById('pop-ollama-row');
+const popOllamaUrl = document.getElementById('pop-ollama-url');
+const popStatus = document.getElementById('pop-status');
+const popSaveBtn = document.getElementById('pop-save-btn');
+const popCancelBtn = document.getElementById('pop-cancel-btn');
+
+const imageUpload = document.getElementById('image-upload');
+const attachedImgTag = document.getElementById('attached-img-tag');
+const activeContextLabel = document.getElementById('active-context-label');
 
 let currentSettings = {
   provider: 'openrouter',
-  model: 'anthropic/claude-3.7-sonnet',
+  model: '',
   apiKey: '',
   ollamaUrl: 'http://localhost:11434',
   customModel: '',
@@ -29,6 +37,7 @@ let currentSettings = {
 let activeContext = { fileName: null, selection: null };
 let attachedImageBase64 = null;
 
+// Initial sync with extension
 vscode.postMessage({ type: 'getSettings' });
 setInterval(() => vscode.postMessage({ type: 'getActiveContext' }), 2000);
 
@@ -36,55 +45,89 @@ window.addEventListener('message', event => {
   const msg = event.data;
   if (msg.type === 'settingsLoaded') {
     currentSettings = msg.settings || currentSettings;
-    providerSelect.value = currentSettings.provider || 'openrouter';
-    apiKeyInput.value = currentSettings.apiKey || '';
-    document.getElementById('set-ollama-url').value = currentSettings.ollamaUrl || 'http://localhost:11434';
-    document.getElementById('set-custom-model').value = currentSettings.customModel || '';
-    
-    toggleOllamaUI();
+    popProvider.value = currentSettings.provider || 'openrouter';
+    popApiKey.value = currentSettings.apiKey || '';
+    popOllamaUrl.value = currentSettings.ollamaUrl || 'http://localhost:11434';
+    popCustomModel.value = currentSettings.customModel || '';
+    toggleOllama();
+
     if (currentSettings.discoveredModels && currentSettings.discoveredModels.length > 0) {
       populateModelDropdown(currentSettings.discoveredModels, currentSettings.model);
     } else if (currentSettings.apiKey || currentSettings.provider === 'ollama') {
       detectModels();
     }
-    updateBadge();
+    updatePill();
   } else if (msg.type === 'activeContext') {
     activeContext = msg;
-    activeFileBadge.textContent = msg.fileName ? msg.fileName : 'Workspace';
+    if (msg.fileName) {
+      activeContextLabel.textContent = msg.fileName + (msg.selection ? ' (selected)' : '');
+    } else {
+      activeContextLabel.textContent = 'Ready';
+    }
   } else if (msg.type === 'runPrompt') {
     promptInput.value = msg.prompt;
-    executeAI();
+    handleSend();
   }
 });
 
-function toggleOllamaUI() {
-  ollamaGroup.style.display = providerSelect.value === 'ollama' ? 'flex' : 'none';
+function toggleOllama() {
+  popOllamaRow.style.display = popProvider.value === 'ollama' ? 'flex' : 'none';
 }
 
-providerSelect.onchange = () => {
-  toggleOllamaUI();
+popProvider.onchange = () => {
+  toggleOllama();
   detectModels();
 };
 
-apiKeyInput.onblur = () => {
-  if (apiKeyInput.value.trim()) {
+popApiKey.onblur = () => {
+  if (popApiKey.value.trim()) {
     detectModels();
   }
 };
 
-scanModelsBtn.onclick = detectModels;
+modelPillBtn.onclick = () => {
+  const isShown = modelPopover.style.display === 'flex';
+  modelPopover.style.display = isShown ? 'none' : 'flex';
+};
+
+popCancelBtn.onclick = () => {
+  modelPopover.style.display = 'none';
+};
+
+popSaveBtn.onclick = () => {
+  currentSettings.provider = popProvider.value;
+  currentSettings.model = popModel.value || 'anthropic/claude-3.7-sonnet';
+  currentSettings.apiKey = popApiKey.value.trim();
+  currentSettings.ollamaUrl = popOllamaUrl.value.trim();
+  currentSettings.customModel = popCustomModel.value.trim();
+  updatePill();
+  vscode.postMessage({ type: 'saveSettings', settings: currentSettings });
+  modelPopover.style.display = 'none';
+};
+
+function updatePill() {
+  const active = currentSettings.customModel || currentSettings.model;
+  if (!currentSettings.apiKey && currentSettings.provider !== 'ollama') {
+    modelPillText.textContent = 'VisionX | Connect Model';
+  } else if (active) {
+    const name = active.split('/').pop();
+    modelPillText.textContent = 'VisionX | ' + name;
+  } else {
+    modelPillText.textContent = 'VisionX | Select Model';
+  }
+}
 
 async function detectModels() {
-  const provider = providerSelect.value;
-  const key = apiKeyInput.value.trim();
-  const ollamaUrl = document.getElementById('set-ollama-url').value.trim() || 'http://localhost:11434';
+  const provider = popProvider.value;
+  const key = popApiKey.value.trim();
+  const ollamaUrl = popOllamaUrl.value.trim() || 'http://localhost:11434';
 
   if (!key && provider !== 'ollama') {
-    modelStatus.textContent = 'Paste your ' + provider.toUpperCase() + ' API key above to auto-recognize models.';
+    popStatus.textContent = 'Paste your API key above to automatically recognize models.';
     return;
   }
 
-  modelStatus.textContent = '🔄 Recognizing models from ' + provider.toUpperCase() + '...';
+  popStatus.textContent = 'Checking ' + provider.toUpperCase() + ' models...';
 
   try {
     let models = [];
@@ -128,81 +171,92 @@ async function detectModels() {
 
     if (models && models.length > 0) {
       currentSettings.discoveredModels = models;
-      populateModelDropdown(models, models[0]);
-      modelStatus.textContent = '✓ ' + models.length + ' models recognized directly from your API key!';
+      if (!currentSettings.model || !models.includes(currentSettings.model)) {
+        currentSettings.model = models[0];
+      }
+      populateModelDropdown(models, currentSettings.model);
+      updatePill();
+      popStatus.textContent = '✓ ' + models.length + ' models recognized from key.';
     } else {
-      modelStatus.textContent = 'Connected, but no models found. You can type a model name below.';
+      popStatus.textContent = 'No models returned. You can enter an override below.';
     }
   } catch (e) {
-    modelStatus.textContent = 'Could not scan automatically: ' + e.message + ' (You can type model manually).';
+    popStatus.textContent = 'Note: ' + e.message;
   }
 }
 
 function populateModelDropdown(models, selected) {
-  modelSelect.innerHTML = '';
+  popModel.innerHTML = '';
   for (const m of models) {
     const opt = document.createElement('option');
     opt.value = m;
     opt.textContent = m;
     if (m === selected) opt.selected = true;
-    modelSelect.appendChild(opt);
+    popModel.appendChild(opt);
   }
 }
 
-function updateBadge() {
-  const active = document.getElementById('set-custom-model').value.trim() || modelSelect.value || currentSettings.model;
-  activeModelBadge.textContent = active.split('/').pop();
+// Import VS Code Handlers
+importVscodeBtn.onclick = () => vscode.postMessage({ type: 'importVSCodeTrigger' });
+if (bannerImportLink) {
+  bannerImportLink.onclick = (e) => {
+    e.preventDefault();
+    vscode.postMessage({ type: 'importVSCodeTrigger' });
+  };
 }
 
-openSettings.onclick = () => settingsModal.style.display = 'flex';
-closeSettings.onclick = () => settingsModal.style.display = 'none';
+// Clear Chat / New Chat
+newChatBtn.onclick = clearChat;
+refreshChatBtn.onclick = clearChat;
 
-saveSettingsBtn.onclick = () => {
-  currentSettings.provider = providerSelect.value;
-  currentSettings.model = modelSelect.value || 'anthropic/claude-3.7-sonnet';
-  currentSettings.apiKey = apiKeyInput.value.trim();
-  currentSettings.ollamaUrl = document.getElementById('set-ollama-url').value.trim();
-  currentSettings.customModel = document.getElementById('set-custom-model').value.trim();
-  updateBadge();
-  vscode.postMessage({ type: 'saveSettings', settings: currentSettings });
-  settingsModal.style.display = 'none';
-};
+function clearChat() {
+  chatMessages.innerHTML = '';
+  if (emptyState) {
+    chatMessages.appendChild(emptyState);
+  }
+}
 
-imgInput.onchange = (e) => {
+// Image upload
+imageUpload.onchange = (e) => {
   const file = e.target.files[0];
   if (file) {
     const reader = new FileReader();
     reader.onload = () => {
       attachedImageBase64 = reader.result;
-      imgPreview.style.display = 'flex';
+      attachedImgTag.style.display = 'inline';
     };
     reader.readAsDataURL(file);
   }
 };
-clearImg.onclick = () => {
+attachedImgTag.onclick = () => {
   attachedImageBase64 = null;
-  imgPreview.style.display = 'none';
-  imgInput.value = '';
+  attachedImgTag.style.display = 'none';
+  imageUpload.value = '';
 };
 
-sendBtn.onclick = executeAI;
+// Send on Enter
+sendBtn.onclick = handleSend;
 promptInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
-    executeAI();
+    handleSend();
   }
 });
 
-async function executeAI() {
+async function handleSend() {
   const text = promptInput.value.trim();
   if (!text && !attachedImageBase64) return;
   promptInput.value = '';
 
-  appendMessage(text, 'user');
-  const aiMsgEl = appendMessage('Connecting to Neural Core...', 'ai');
+  if (emptyState && emptyState.parentElement) {
+    emptyState.parentElement.removeChild(emptyState);
+  }
+
+  appendUserMsg(text);
+  const aiMsgEl = appendAIMsg('Thinking...');
 
   try {
-    const chosenModel = currentSettings.customModel || currentSettings.model || modelSelect.value;
+    const chosenModel = currentSettings.customModel || currentSettings.model || popModel.value;
     let endpoint = '';
     let headers = { 'Content-Type': 'application/json' };
     let body = {};
@@ -219,14 +273,14 @@ async function executeAI() {
       }
       let userPrompt = text;
       if (activeContext.selection) {
-        userPrompt += '\n\n[Active Selection in ' + (activeContext.fileName || 'file') + ']:\n' + activeContext.selection;
+        userPrompt += '\n\n[Context: ' + (activeContext.fileName || 'active file') + ']:\n' + activeContext.selection;
       }
       content.push({ type: 'text', text: userPrompt });
 
       body = {
         model: chosenModel,
         messages: [
-          { role: 'system', content: 'You are VisionX Neural Assistant. Provide clean code and direct solutions.' },
+          { role: 'system', content: 'You are VisionX Copilot, a high-caliber AI programming companion. Be concise, accurate, and provide clean code.' },
           { role: 'user', content: content }
         ]
       };
@@ -249,7 +303,7 @@ async function executeAI() {
       body = {
         model: chosenModel,
         messages: [
-          { role: 'system', content: 'You are VisionX Neural Assistant. Provide clean code and direct solutions.' },
+          { role: 'system', content: 'You are VisionX Copilot. Deliver concise and accurate code.' },
           { role: 'user', content: text + (activeContext.selection ? '\n\nContext:\n' + activeContext.selection : '') }
         ]
       };
@@ -265,7 +319,7 @@ async function executeAI() {
     }
 
     if (!currentSettings.apiKey && currentSettings.provider !== 'ollama') {
-      aiMsgEl.innerHTML = '⚠️ <b>API Key required!</b> Click "BYOK Keys" above to enter your key for ' + currentSettings.provider + '.';
+      aiMsgEl.innerHTML = 'Please click the model pill below and enter your API key for ' + currentSettings.provider.toUpperCase() + '.';
       return;
     }
 
@@ -277,7 +331,7 @@ async function executeAI() {
 
     if (!res.ok) {
       const err = await res.text();
-      aiMsgEl.innerHTML = '❌ <b>API Error:</b> ' + err;
+      aiMsgEl.innerHTML = 'Error: ' + err;
       return;
     }
 
@@ -293,17 +347,31 @@ async function executeAI() {
 
     renderMarkdown(aiMsgEl, reply);
   } catch (e) {
-    aiMsgEl.innerHTML = '❌ <b>Failed to connect:</b> ' + e.message;
+    aiMsgEl.innerHTML = 'Connection error: ' + e.message;
   }
 }
 
-function appendMessage(text, sender) {
-  const msg = document.createElement('div');
-  msg.className = 'msg ' + sender;
-  msg.textContent = text;
-  chat.appendChild(msg);
-  chat.scrollTop = chat.scrollHeight;
-  return msg;
+function appendUserMsg(text) {
+  const row = document.createElement('div');
+  row.className = 'msg-row';
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-user';
+  bubble.textContent = text;
+  row.appendChild(bubble);
+  chatMessages.appendChild(row);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function appendAIMsg(text) {
+  const row = document.createElement('div');
+  row.className = 'msg-row';
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-ai';
+  bubble.textContent = text;
+  row.appendChild(bubble);
+  chatMessages.appendChild(row);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return bubble;
 }
 
 function renderMarkdown(el, text) {
@@ -332,10 +400,10 @@ function renderMarkdown(el, text) {
     }
 
     const block = document.createElement('div');
-    block.className = 'code-block';
-    block.innerHTML = '<div class="code-header"><span>' + escapeHtml(lang) + '</span><div><button class="copy-btn">Copy</button><button class="apply-btn">Insert in Editor</button></div></div><pre><code>' + escapeHtml(code) + '</code></pre>';
+    block.className = 'code-container';
+    block.innerHTML = '<div class="code-top"><span>' + escapeHtml(lang) + '</span><div><button class="code-action-btn copy-btn">Copy</button><button class="code-action-btn insert-btn">Insert</button></div></div><pre><code>' + escapeHtml(code) + '</code></pre>';
     block.querySelector('.copy-btn').onclick = () => vscode.postMessage({ type: 'copyClipboard', code: code });
-    block.querySelector('.apply-btn').onclick = () => vscode.postMessage({ type: 'insertCode', code: code });
+    block.querySelector('.insert-btn').onclick = () => vscode.postMessage({ type: 'insertCode', code: code });
     el.appendChild(block);
 
     lastIndex = regex.lastIndex;
@@ -350,7 +418,7 @@ function renderMarkdown(el, text) {
     }
   }
 
-  chat.scrollTop = chat.scrollHeight;
+  chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 function escapeHtml(str) {

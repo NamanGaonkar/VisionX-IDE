@@ -15,7 +15,7 @@ ICON_PATH = BUILD_DIR / "icons" / "visionx.ico"
 LOGO_SVG_PATH = BASE_DIR / "src" / "branding" / "visionx-logo.svg"
 
 print("==================================================")
-print("     VisionX IDE v1.1.0 - Complete Engine Rebuild ")
+print("     VisionX IDE v1.2.0 - Complete Engine Rebuild ")
 print("==================================================")
 
 # 1. Clean and extract
@@ -148,26 +148,21 @@ if ext_dir.exists():
         shutil.rmtree(target_ai)
     shutil.copytree(BASE_DIR / "src" / "ai-assistant", target_ai)
 
-# 8. Inject Liquid Glass CSS into workbench stylesheet (With Rounded Corners & Solid Non-Bleed Titlebar)
+# 8. Inject Theme-Compatible Liquid Glass CSS into workbench stylesheet
 css_path = VISIONX_DIST / "resources" / "app" / "out" / "vs" / "workbench" / "workbench.desktop.main.css"
 if css_path.exists():
-    print("Injecting signature Liquid Glass CSS (rounded corners, solid titlebar, glowing symmetry)...")
+    print("Injecting theme-compatible Liquid Glass CSS (rounded corners, solid titlebar, dynamic theme colors)...")
     glass_css = """
 /* ======================================================== */
-/* VisionX Liquid Glass Symmetrical Aesthetics (v1.1.0)     */
+/* VisionX Symmetrical Geometry & Fluid Aesthetics (v1.2.0)  */
+/* Fully Theme-Compatible: Uses active theme CSS variables  */
 /* ======================================================== */
-:root {
-  --visionx-accent: #ff5500;
-  --visionx-accent-glow: rgba(255, 85, 0, 0.4);
-  --visionx-gold: #ffaa00;
-  --visionx-bg: #07090e;
-}
 
 /* OPAQUE, SOLID TITLE BAR - NO CONTENT BLEED */
 .monaco-workbench .part.titlebar {
-  background: #07090e !important;
-  border-bottom: 1px solid rgba(255, 85, 0, 0.25) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6) !important;
+  background-color: var(--vscode-titleBar-activeBackground) !important;
+  color: var(--vscode-titleBar-activeForeground) !important;
+  border-bottom: 1px solid var(--vscode-titleBar-border, rgba(128, 128, 128, 0.2)) !important;
   height: 38px !important;
   z-index: 100 !important;
 }
@@ -175,94 +170,60 @@ if css_path.exists():
 .monaco-workbench .part.titlebar .menubar {
   display: flex !important;
   align-items: center !important;
-  gap: 3px !important;
+  gap: 2px !important;
 }
 
 .monaco-workbench .part.titlebar .menubar .menubar-menu-button {
-  border-radius: 8px !important;
+  border-radius: 6px !important;
   padding: 4px 8px !important;
   margin: 0 1px !important;
-  transition: all 0.2s ease !important;
+  transition: all 0.15s ease !important;
 }
 
 .monaco-workbench .part.titlebar .menubar .menubar-menu-button:hover,
 .monaco-workbench .part.titlebar .menubar .menubar-menu-button.open {
-  background: rgba(255, 85, 0, 0.2) !important;
-  color: #ffaa00 !important;
+  background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.15)) !important;
 }
 
-/* Rounded Symmetrical Search Center */
+/* Rounded Symmetrical Search Command Center */
 .monaco-workbench .part.titlebar .command-center {
-  border-radius: 12px !important;
-  background: rgba(255, 85, 0, 0.08) !important;
-  border: 1px solid rgba(255, 85, 0, 0.22) !important;
-  transition: all 0.25s ease !important;
+  border-radius: 8px !important;
+  background: var(--vscode-commandCenter-background, rgba(128, 128, 128, 0.08)) !important;
+  border: 1px solid var(--vscode-commandCenter-border, rgba(128, 128, 128, 0.2)) !important;
+  transition: all 0.2s ease !important;
 }
 
 .monaco-workbench .part.titlebar .command-center:hover {
-  border-color: #ff5500 !important;
-  box-shadow: 0 0 12px rgba(255, 85, 0, 0.3) !important;
+  border-color: var(--vscode-commandCenter-activeBorder, var(--vscode-focusBorder, #ff5500)) !important;
 }
 
-/* Activity Bar & Sidebars */
-.monaco-workbench .part.activitybar {
-  background: #05060a !important;
-  border-right: 1px solid rgba(255, 85, 0, 0.15) !important;
-}
-
+/* Activity Bar Items: Smooth Rounded Pills */
 .monaco-workbench .part.activitybar .action-item {
-  border-radius: 10px !important;
+  border-radius: 8px !important;
   margin: 4px 2px !important;
-}
-
-.monaco-workbench .part.sidebar {
-  background: #080a10 !important;
-  border-right: 1px solid rgba(255, 85, 0, 0.15) !important;
-}
-
-.monaco-workbench .part.statusbar {
-  background: #05060a !important;
-  border-top: 1px solid rgba(255, 85, 0, 0.25) !important;
-  box-shadow: 0 -2px 10px rgba(255, 85, 0, 0.08) !important;
 }
 
 /* Rounded Symmetrical Editor Tabs */
 .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab {
-  border-radius: 10px 10px 0 0 !important;
-  margin: 4px 2px 0 2px !important;
+  border-radius: 8px 8px 0 0 !important;
+  margin: 2px 2px 0 2px !important;
   border-right: none !important;
-  transition: all 0.2s ease !important;
+  transition: all 0.15s ease !important;
 }
 
-.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab.active {
-  background: #0f121d !important;
-  border-bottom: 2px solid #ff5500 !important;
-  box-shadow: 0 0 14px rgba(255, 85, 0, 0.25), inset 0 2px 0 #ff6600 !important;
-}
-
-/* Glowing cursor & focus halos */
-.monaco-editor .cursor {
-  background-color: #ff6600 !important;
-  box-shadow: 0 0 8px #ff6600, 0 0 16px rgba(255, 102, 0, 0.75) !important;
-}
-
-/* Rounded Popups, Menus & Dialogs */
+/* Rounded Popups, Quick Inputs & Dialog Widgets */
 .monaco-menu .monaco-action-bar,
 .monaco-workbench .quick-input-widget,
 .monaco-workbench .editor-widget {
-  border-radius: 12px !important;
+  border-radius: 10px !important;
   overflow: hidden !important;
-  border: 1px solid rgba(255, 85, 0, 0.3) !important;
-  box-shadow: 0 12px 36px rgba(0,0,0,0.7), 0 0 18px rgba(255, 85, 0, 0.15) !important;
+  border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.25)) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35) !important;
 }
 
 /* Rounded Sleek Scrollbars */
 .monaco-scrollable-element > .scrollbar > .slider {
-  background: rgba(255, 85, 0, 0.2) !important;
-  border-radius: 8px !important;
-}
-.monaco-scrollable-element > .scrollbar > .slider:hover {
-  background: rgba(255, 85, 0, 0.45) !important;
+  border-radius: 6px !important;
 }
 """
     with open(css_path, "a", encoding="utf-8") as f:
@@ -292,5 +253,5 @@ except Exception as e:
     print("Could not run rcedit:", e)
 
 print("==================================================")
-print(" VisionX IDE v1.1.0 build completed successfully! ")
+print(" VisionX IDE v1.2.0 build completed successfully! ")
 print("==================================================")

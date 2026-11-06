@@ -10,26 +10,99 @@ function activate(context) {
         })
     );
 
+    // Register commands
     context.subscriptions.push(
         vscode.commands.registerCommand('visionx.askAI', () => {
             vscode.commands.executeCommand('visionx.aiView.focus');
         }),
         vscode.commands.registerCommand('visionx.explainCode', () => {
-            triggerCodeAction(provider, 'Explain this code in detail and highlight edge cases:');
+            triggerCodeAction(provider, '/explain');
         }),
         vscode.commands.registerCommand('visionx.refactorCode', () => {
-            triggerCodeAction(provider, 'Refactor this code for optimal performance, readability, and modern idioms:');
+            triggerCodeAction(provider, '/refactor');
         }),
         vscode.commands.registerCommand('visionx.fixErrors', () => {
-            triggerCodeAction(provider, 'Identify any bugs or logical errors in this code and return the fix:');
+            triggerCodeAction(provider, '/fix');
+        }),
+        vscode.commands.registerCommand('visionx.importFromVSCode', () => {
+            importFromVSCode(true);
         })
     );
+
+    // First launch check: Offer to import from VS Code
+    checkFirstLaunchImport(context);
 }
 
-function triggerCodeAction(provider, promptPrefix) {
+async function checkFirstLaunchImport(context) {
+    const hasPrompted = context.globalState.get('visionx_imported_or_prompted');
+    if (!hasPrompted) {
+        await context.globalState.update('visionx_imported_or_prompted', true);
+        
+        const vscodeUserData = path.join(process.env.APPDATA || '', 'Code', 'User');
+        if (fs.existsSync(vscodeUserData)) {
+            const choice = await vscode.window.showInformationMessage(
+                'Welcome to VisionX! Would you like to import your settings, keybindings, and extensions from Visual Studio Code?',
+                'Import from VS Code',
+                'Start Clean'
+            );
+            if (choice === 'Import from VS Code') {
+                await importFromVSCode(false);
+            }
+        }
+    }
+}
+
+async function importFromVSCode(interactive) {
+    try {
+        const vscodeUserData = path.join(process.env.APPDATA || '', 'Code', 'User');
+        const visionxUserData = path.join(process.env.APPDATA || '', 'VisionX', 'User');
+
+        if (!fs.existsSync(vscodeUserData)) {
+            if (interactive) {
+                vscode.window.showWarningMessage('No existing Visual Studio Code user configuration found to import.');
+            }
+            return;
+        }
+
+        fs.mkdirSync(visionxUserData, { recursive: true });
+
+        // Copy settings.json
+        const settingsSrc = path.join(vscodeUserData, 'settings.json');
+        const settingsDest = path.join(visionxUserData, 'settings.json');
+        if (fs.existsSync(settingsSrc)) {
+            fs.copyFileSync(settingsSrc, settingsDest);
+        }
+
+        // Copy keybindings.json
+        const keybindingsSrc = path.join(vscodeUserData, 'keybindings.json');
+        const keybindingsDest = path.join(visionxUserData, 'keybindings.json');
+        if (fs.existsSync(keybindingsSrc)) {
+            fs.copyFileSync(keybindingsSrc, keybindingsDest);
+        }
+
+        // Copy snippets directory
+        const snippetsSrc = path.join(vscodeUserData, 'snippets');
+        const snippetsDest = path.join(visionxUserData, 'snippets');
+        if (fs.existsSync(snippetsSrc)) {
+            fs.cpSync(snippetsSrc, snippetsDest, { recursive: true });
+        }
+
+        const reload = await vscode.window.showInformationMessage(
+            'Successfully imported settings, keybindings, and snippets from Visual Studio Code!',
+            'Reload Window'
+        );
+        if (reload === 'Reload Window') {
+            vscode.commands.executeCommand('workbench.action.reloadWindow');
+        }
+    } catch (e) {
+        vscode.window.showErrorMessage('Error importing from VS Code: ' + e.message);
+    }
+}
+
+function triggerCodeAction(provider, commandKeyword) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
-        vscode.window.showInformationMessage('Open a file first to use VisionX AI');
+        vscode.window.showInformationMessage('Open a file first to use VisionX Chat');
         return;
     }
     const selection = editor.document.getText(editor.selection);
@@ -38,7 +111,7 @@ function triggerCodeAction(provider, promptPrefix) {
         return;
     }
     vscode.commands.executeCommand('visionx.aiView.focus');
-    provider.sendExternalPrompt(promptPrefix + '\n```' + editor.document.languageId + '\n' + selection + '\n```');
+    provider.sendExternalPrompt(commandKeyword + '\n```' + editor.document.languageId + '\n' + selection + '\n```');
 }
 
 class VisionXAIViewProvider {
@@ -62,17 +135,17 @@ class VisionXAIViewProvider {
             html = html.replace('{{WEBVIEW_JS_URI}}', jsUri.toString());
             webviewView.webview.html = html;
         } catch (e) {
-            webviewView.webview.html = '<h3>Error loading VisionX AI Webview: ' + e.message + '</h3>';
+            webviewView.webview.html = '<h3>Error loading Chat: ' + e.message + '</h3>';
         }
 
         webviewView.webview.onDidReceiveMessage(async (data) => {
             switch (data.type) {
                 case 'saveSettings': {
-                    await this._context.globalState.update('visionx_settings_v3', data.settings);
+                    await this._context.globalState.update('visionx_settings_v4', data.settings);
                     break;
                 }
                 case 'getSettings': {
-                    const settings = this._context.globalState.get('visionx_settings_v3') || {
+                    const settings = this._context.globalState.get('visionx_settings_v4') || {
                         provider: 'openrouter',
                         model: 'anthropic/claude-3.7-sonnet',
                         apiKey: '',
@@ -108,13 +181,17 @@ class VisionXAIViewProvider {
                                 editBuilder.insert(editor.selection.active, data.code);
                             }
                         });
-                        vscode.window.showInformationMessage('VisionX: Code applied');
+                        vscode.window.showInformationMessage('VisionX: Code inserted');
                     }
                     break;
                 }
                 case 'copyClipboard': {
                     await vscode.env.clipboard.writeText(data.code);
                     vscode.window.showInformationMessage('VisionX: Copied to clipboard');
+                    break;
+                }
+                case 'importVSCodeTrigger': {
+                    await importFromVSCode(true);
                     break;
                 }
             }

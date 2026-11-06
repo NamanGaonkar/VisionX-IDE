@@ -1,99 +1,109 @@
 <div align="center">
 
-<img src="./logo.png" width="160" height="160" alt="VisionX Logo" style="border-radius: 24px; box-shadow: 0 0 35px rgba(255, 85, 0, 0.5);" />
+<img src="./logo.png" width="140" height="140" alt="VisionX Logo" style="border-radius: 20px;" />
 
 # VisionX IDE
-### Next-Generation Autonomous AI & Spatial Developer Workspace
+### Autonomous AI and Spatial Developer Workspace
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-red.svg)]()
-[![Theme](https://img.shields.io/badge/Aesthetics-Liquid%20Glass-ff5500.svg)]()
-[![AI](https://img.shields.io/badge/AI%20Core-BYOK%20All%20Models-ffd700.svg)]()
-[![Marketplace](https://img.shields.io/badge/Extensions-Open%20VSX-blue.svg)](https://open-vsx.org/)
+[![Aesthetics](https://img.shields.io/badge/Aesthetics-Liquid%20Glass-ff5500.svg)]()
+[![AI Engine](https://img.shields.io/badge/AI%20Core-BYOK%20Dynamic%20Discovery-ffd700.svg)]()
+[![Extensions](https://img.shields.io/badge/Extensions-Open%20VSX-blue.svg)](https://open-vsx.org/)
 
-**VisionX** is a sovereign, high-velocity IDE built for the multi-modal agentic era. Engineered on an open-source Code-OSS foundation, completely rebranded with zero proprietary locks, a bespoke **Liquid Glass** cyberpunk aesthetic, native Bring-Your-Own-Key (BYOK) AI engine supporting every major foundation model, and full Open VSX plugin registry compatibility.
-
----
+VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a symmetrical Liquid Glass interface, native Bring-Your-Own-Key (BYOK) dynamic AI model discovery, and full compatibility with the Open VSX extension ecosystem.
 
 </div>
 
-## 🌟 Signature Features
+---
 
-### 1. 💎 Liquid Glass Neo-Cyberpunk Aesthetics
-- **Bespoke Theme:** Deep obsidian translucent glass surfaces (`#080a10`), neon amber/crimson glowing accents (`#ff5500` & `#ffd700`), and liquid glass borders.
-- **Glowing Elements:** Neon glowing editor cursor, smooth line-highlight glow, active tab halos, and custom scrollbars.
-- **Glassmorphic UI Shell:** Translucent title bar, activity bar, and status bar with native backdrop blur.
+## Features
 
-### 2. 🧠 VisionX AI Neural Core (BYOK)
-No subscriptions, no artificial rate limits. Plug your own keys or run locally:
-- **OpenRouter Support:** Single-key access to 300+ models (Claude 3.7 Sonnet, DeepSeek R1, GPT-4o, Llama 3.3 70B, Qwen 2.5 Coder, Gemini 2.5).
-- **Direct Cloud Providers:** Anthropic, OpenAI, Google Gemini, DeepSeek, Groq, Mistral.
-- **100% Local / Offline:** Auto-detects local **Ollama** (`http://localhost:11434`) for zero-cost, private offline coding.
-- **In-Editor Context:** Instant selection awareness, code refactoring, bug fixes, and 1-click diff application directly into the active editor.
+### Liquid Glass Interface and Theme Compatibility
+- Deep dark liquid glass shell with obsidian surfaces and warm amber accents.
+- Full theme interoperability: Switching between light, dark, and high-contrast color themes applies dynamically across the entire window, title bar, sidebars, activity bar, and editor tabs.
+- Symmetrical rounded geometry, non-bleeding solid title bar, and smooth tab transitions.
 
-### 3. 📷 Visual & Multi-Modal Coding
-- Attach UI mockups, screenshots, or whiteboard architecture diagrams directly into the chat prompt.
-- VisionX analyzes design tokens, layout hierarchy, and active code to synthesize matching React, Vue, Tailwind, or Flutter components.
+### VisionX Chat (Native Copilot Architecture)
+- Integrated Chat sidebar matching the official native interface structure.
+- Dynamic BYOK discovery: Connect any API key (OpenRouter, OpenAI, Anthropic, Google Gemini, DeepSeek, Groq) or local Ollama instance (`http://localhost:11434`).
+- Automatic model discovery: Available models are queried and populated directly from provider endpoints (`/v1/models` and `/api/tags`) upon key entry.
+- Direct editor integration: Trigger explanations, inline refactoring, and automated bug fixing directly from code selections.
 
-### 4. 🧩 Full Extension Marketplace Compatibility
-- Pre-configured with the **Open VSX Registry** (Eclipse Foundation).
-- Install any plugin (Python, Rust Analyzer, ESLint, Prettier, GitLens, Docker, Vim, etc.) seamlessly just like standard VS Code.
+### Automatic Migration from Visual Studio Code
+- First-run detection: Prompts upon initial launch to automatically import existing configurations from Visual Studio Code.
+- Imports `settings.json`, `keybindings.json`, and user snippets from `%APPDATA%\Code\User` directly into `%APPDATA%\VisionX\User`.
+- Manual import command: Run `VisionX: Import Settings & Keybindings from Visual Studio Code` from the Command Palette (`Ctrl+Shift+P`) at any time.
 
-### 5. 🛡️ Absolute Privacy & Zero Telemetry
-- All corporate Microsoft telemetry, tracking, and diagnostics have been completely stripped out.
-- Your code and keys never touch third-party proxy servers.
+### Extension Ecosystem
+- Configured out of the box with the Open VSX Registry (Eclipse Foundation).
+- Install language servers, linters, debuggers, formatters, and themes directly from the Extensions view (`Ctrl+Shift+X`).
+
+### Privacy and Telemetry
+- All corporate tracking, diagnostic telemetry, and crash uploaders have been completely disabled.
+- AI prompts and API credentials connect directly to your chosen endpoints without intermediary proxy servers.
 
 ---
 
-## 🚀 Quick Start & Installation
+## Installation and Quick Start
 
-### Option 1: Automatic Local Install
-If you have cloned the repo:
-```bash
-# Build the distribution
+### Standalone Release (Windows x64)
+1. Download the latest release archive (`VisionX-Windows-x64-v1.2.0.zip`) from the Releases section.
+2. Extract the archive to your preferred folder.
+3. Run `VisionX.exe`.
+
+### Local Installation via Source
+```powershell
+# Clone the repository
+git clone https://github.com/NamanGaonkar/VisionX-IDE.git
+cd VisionX-IDE
+
+# Build the distribution engine
 python scripts/build_visionx.py
 
 # Install to %LOCALAPPDATA%\Programs\VisionX and configure shortcuts + PATH
 python scripts/install_local.py
 ```
 
-### Option 2: Launch from Terminal
-Once installed, launch VisionX from any PowerShell or Command Prompt terminal:
-```bash
+### Launching from Terminal
+Once installed, launch VisionX from PowerShell or Command Prompt:
+```powershell
 visionx .
 ```
 
 ---
 
-## ⚙️ Configuring BYOK AI Models
+## Configuration
 
-1. Launch **VisionX**.
-2. Click the glowing **VisionX V** icon in the left Activity Bar to open **VisionX Intelligence**.
-3. Click the **⚙ (Settings)** button in the top right of the panel.
-4. Select your provider (**OpenRouter**, **Anthropic**, **OpenAI**, **DeepSeek**, **Groq**, or **Ollama**).
-5. Paste your API key and save.
+### Configuring BYOK AI Models
+1. Launch VisionX.
+2. Open the Chat panel from the Activity Bar on the left.
+3. Click the model pill in the input bar or open settings.
+4. Select your provider (OpenRouter, OpenAI, Anthropic, Gemini, DeepSeek, Groq, or Ollama).
+5. Paste your API key. Authorized models are discovered and populated automatically.
 
 ---
 
-## 🛠️ Repository Architecture
+## Repository Structure
 
 ```
 VisionX-IDE/
-├── build/                 # Generated multi-size icons and base assets
-│   └── icons/             # visionx.ico and high-res PNG icons
+├── build/                 # Prebuilt engine assets and multi-resolution icons
+│   └── icons/             # visionx.ico and high-resolution icons
 ├── src/
-│   ├── theme/             # Official VisionX Liquid Glass Theme extension
-│   └── ai-assistant/      # VisionX AI Core extension (BYOK + Webview)
+│   ├── branding/          # Official VisionX identity vector assets
+│   ├── theme/             # VisionX Liquid Glass theme extension
+│   └── ai-assistant/      # VisionX Chat extension (BYOK and dynamic discovery)
 ├── scripts/
 │   ├── build_visionx.py   # Assembles dist, patches product.json, sets PE icons
 │   ├── install_local.py   # Installs to AppData, creates shortcuts, registers PATH
-│   └── package_release.py # Packages standalone Windows release zip
-├── logo.png               # Official high-res VisionX identity logo
+│   └── package_release.py # Packages standalone Windows release archive
+├── logo.png               # Official high-resolution VisionX identity logo
 └── README.md
 ```
 
 ---
 
-## 📄 License
+## License
 This project is open-source software licensed under the [MIT License](LICENSE).
-Code-OSS engine &copy; respective contributors. Custom branding, Liquid Glass Theme, and VisionX AI Core are maintained by the VisionX Community.
+Code-OSS engine copyright respective contributors. Custom branding, Liquid Glass Theme, and VisionX Chat are maintained by the VisionX Contributors.

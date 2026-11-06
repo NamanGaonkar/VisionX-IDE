@@ -35,7 +35,7 @@ if INSTALL_DIR.exists():
         print(f"Note during cleanup: {e}")
 
 INSTALL_DIR.mkdir(parents=True, exist_ok=True)
-print("Copying fresh VisionX v1.1.0 binaries...")
+print("Copying fresh VisionX v1.2.0 binaries...")
 shutil.copytree(DIST_DIR, INSTALL_DIR, dirs_exist_ok=True)
 print("Binaries copied successfully.")
 
@@ -75,5 +75,5 @@ if (-not $curr.Contains('{str(BIN_PATH)}')) {{
 subprocess.run(["powershell", "-NoProfile", "-Command", ps_path], capture_output=True, timeout=10)
 
 print("==================================================")
-print(" VisionX IDE v1.1.0 Installed Locally!            ")
+print(" VisionX IDE v1.2.0 Installed Locally!            ")
 print("==================================================")
