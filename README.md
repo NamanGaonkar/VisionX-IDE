@@ -48,7 +48,7 @@ VisionX is a high-velocity code editor and developer workspace built on an open-
 ## Installation and Quick Start
 
 ### Standalone Release (Windows x64)
-1. Download the latest release archive (`VisionX-Windows-x64-v1.2.0.zip`) from the Releases section.
+1. Download the latest release archive (`VisionX-Windows-x64-v1.3.0.zip`) from the Releases section.
 2. Extract the archive to your preferred folder.
 3. Run `VisionX.exe`.
 

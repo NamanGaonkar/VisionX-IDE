@@ -4,6 +4,8 @@ import shutil
 import zipfile
 import json
 import subprocess
+import hashlib
+import base64
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -15,7 +17,7 @@ ICON_PATH = BUILD_DIR / "icons" / "visionx.ico"
 LOGO_SVG_PATH = BASE_DIR / "src" / "branding" / "visionx-logo.svg"
 
 print("==================================================")
-print("     VisionX IDE v1.2.0 - Complete Engine Rebuild ")
+print("     VisionX IDE v1.3.0 - Complete Engine Rebuild ")
 print("==================================================")
 
 # 1. Clean and extract
@@ -72,10 +74,9 @@ if product_json_path.exists():
     product["licenseUrl"] = "https://github.com/NamanGaonkar/VisionX-IDE/blob/main/LICENSE"
     
     product["extensionsGallery"] = {
-        "serviceUrl": "https://open-vsx.org/vscode/gallery",
-        "itemUrl": "https://open-vsx.org/vscode/item",
-        "latestUrlTemplate": "https://open-vsx.org/vscode/gallery/{publisher}/{name}/latest",
-        "controlUrl": "https://raw.githubusercontent.com/EclipseFdn/publish-extensions/refs/heads/master/extension-control/extensions.json"
+        "serviceUrl": "https://marketplace.visualstudio.com/_apis/public/gallery",
+        "itemUrl": "https://marketplace.visualstudio.com/items",
+        "cacheUrl": "https://vscode.blob.core.windows.net/gallery/index"
     }
 
     if "configurationDefaults" not in product:
@@ -229,6 +230,41 @@ if css_path.exists():
     with open(css_path, "a", encoding="utf-8") as f:
         f.write("\n" + glass_css)
 
+# 8b. Neutralize installation corrupt/tamper integrity check and update checksums
+print("Neutralizing integrity checks and updating product checksums...")
+app_out = VISIONX_DIST / "resources" / "app" / "out"
+js_files_to_patch = [
+    app_out / "vs" / "workbench" / "workbench.desktop.main.js",
+    app_out / "vs" / "sessions" / "sessions.desktop.main.js"
+]
+for p in js_files_to_patch:
+    if p.exists():
+        try:
+            txt = p.read_text(encoding="utf-8", errors="ignore")
+            target_str = "async _isPure(){let o=this.productService.checksums"
+            if target_str in txt:
+                txt = txt.replace(target_str, "async _isPure(){return{isPure:true,proof:[]};let o=this.productService.checksums")
+                p.write_text(txt, encoding="utf-8")
+                print(f"Patched _isPure() in {p.name}")
+        except Exception as e:
+            print(f"Note patching {p.name}: {e}")
+
+# Recalculate and update all file checksums in product.json
+if product_json_path.exists():
+    with open(product_json_path, "r", encoding="utf-8") as f:
+        prod = json.load(f)
+    if "checksums" in prod:
+        for rel_path in list(prod["checksums"].keys()):
+            full_p = app_out / rel_path
+            if full_p.exists():
+                data = full_p.read_bytes()
+                h = hashlib.sha256(data).digest()
+                b64 = base64.b64encode(h).decode("utf-8").rstrip("=")
+                prod["checksums"][rel_path] = b64
+        with open(product_json_path, "w", encoding="utf-8") as f:
+            json.dump(prod, f, indent=2)
+        print("Updated product.json checksums with fresh SHA-256 digests.")
+
 # 9. Use rcedit to patch VisionX.exe binary icon and metadata
 rcedit_path = shutil.which("rcedit") or "rcedit.exe"
 print(f"Patching executable with rcedit ({rcedit_path})...")
@@ -253,5 +289,5 @@ except Exception as e:
     print("Could not run rcedit:", e)
 
 print("==================================================")
-print(" VisionX IDE v1.2.0 build completed successfully! ")
+print(" VisionX IDE v1.3.0 build completed successfully! ")
 print("==================================================")

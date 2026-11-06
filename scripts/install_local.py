@@ -35,7 +35,7 @@ if INSTALL_DIR.exists():
         print(f"Note during cleanup: {e}")
 
 INSTALL_DIR.mkdir(parents=True, exist_ok=True)
-print("Copying fresh VisionX v1.2.0 binaries...")
+print("Copying fresh VisionX v1.3.0 binaries...")
 shutil.copytree(DIST_DIR, INSTALL_DIR, dirs_exist_ok=True)
 print("Binaries copied successfully.")
 
@@ -74,6 +74,42 @@ if (-not $curr.Contains('{str(BIN_PATH)}')) {{
 """
 subprocess.run(["powershell", "-NoProfile", "-Command", ps_path], capture_output=True, timeout=10)
 
+# 5. Automatically migrate VS Code settings and extensions
+print("Migrating Visual Studio Code settings and extensions to VisionX...")
+appdata = Path(os.environ.get("APPDATA", ""))
+userprofile = Path(os.environ.get("USERPROFILE", ""))
+vscode_user = appdata / "Code" / "User"
+visionx_user = appdata / "VisionX" / "User"
+vscode_ext = userprofile / ".vscode" / "extensions"
+visionx_ext = userprofile / ".visionx" / "extensions"
+
+if vscode_user.exists():
+    visionx_user.mkdir(parents=True, exist_ok=True)
+    for fname in ["settings.json", "keybindings.json", "mcp.json", "chatLanguageModels.json"]:
+        src = vscode_user / fname
+        dest = visionx_user / fname
+        if src.exists():
+            shutil.copy2(src, dest)
+    snip_src = vscode_user / "snippets"
+    if snip_src.exists():
+        shutil.copytree(snip_src, visionx_user / "snippets", dirs_exist_ok=True)
+    print("Migrated settings, keybindings, and snippets from VS Code.")
+
+if vscode_ext.exists():
+    visionx_ext.mkdir(parents=True, exist_ok=True)
+    ext_json = vscode_ext / "extensions.json"
+    if ext_json.exists():
+        shutil.copy2(ext_json, visionx_ext / "extensions.json")
+    linked_exts = 0
+    for item in vscode_ext.iterdir():
+        if item.is_dir() and not item.name.startswith("."):
+            dest_item = visionx_ext / item.name
+            if not dest_item.exists():
+                res = subprocess.run(["cmd", "/c", "mklink", "/J", str(dest_item), str(item)], capture_output=True)
+                if res.returncode == 0:
+                    linked_exts += 1
+    print(f"Migrated and linked {linked_exts} extensions from VS Code.")
+
 print("==================================================")
-print(" VisionX IDE v1.2.0 Installed Locally!            ")
+print(" VisionX IDE v1.3.0 Installed Locally!            ")
 print("==================================================")

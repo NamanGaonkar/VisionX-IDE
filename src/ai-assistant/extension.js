@@ -87,8 +87,51 @@ async function importFromVSCode(interactive) {
             fs.cpSync(snippetsSrc, snippetsDest, { recursive: true });
         }
 
+        // Copy mcp.json
+        const mcpSrc = path.join(vscodeUserData, 'mcp.json');
+        const mcpDest = path.join(visionxUserData, 'mcp.json');
+        if (fs.existsSync(mcpSrc)) {
+            fs.copyFileSync(mcpSrc, mcpDest);
+        }
+
+        // Copy/link all extensions from .vscode/extensions
+        const userProfile = process.env.USERPROFILE || '';
+        const vscodeExt = path.join(userProfile, '.vscode', 'extensions');
+        const visionxExt = path.join(userProfile, '.visionx', 'extensions');
+        let extCount = 0;
+        if (fs.existsSync(vscodeExt)) {
+            fs.mkdirSync(visionxExt, { recursive: true });
+            const extJsonSrc = path.join(vscodeExt, 'extensions.json');
+            const extJsonDest = path.join(visionxExt, 'extensions.json');
+            if (fs.existsSync(extJsonSrc)) {
+                try { fs.copyFileSync(extJsonSrc, extJsonDest); } catch {}
+            }
+            const entries = fs.readdirSync(vscodeExt);
+            for (const item of entries) {
+                if (!item.startsWith('.')) {
+                    const srcItem = path.join(vscodeExt, item);
+                    const destItem = path.join(visionxExt, item);
+                    if (!fs.existsSync(destItem)) {
+                        try {
+                            fs.symlinkSync(srcItem, destItem, 'junction');
+                            extCount++;
+                        } catch {
+                            try {
+                                fs.cpSync(srcItem, destItem, { recursive: true });
+                                extCount++;
+                            } catch {}
+                        }
+                    }
+                }
+            }
+        }
+
+        const msg = extCount > 0
+            ? 'Successfully imported settings, keybindings, snippets, and ' + extCount + ' extensions from Visual Studio Code!'
+            : 'Successfully imported settings, keybindings, and snippets from Visual Studio Code!';
+
         const reload = await vscode.window.showInformationMessage(
-            'Successfully imported settings, keybindings, and snippets from Visual Studio Code!',
+            msg,
             'Reload Window'
         );
         if (reload === 'Reload Window') {
