@@ -17,7 +17,7 @@ ICON_PATH = BUILD_DIR / "icons" / "visionx.ico"
 LOGO_SVG_PATH = BASE_DIR / "src" / "branding" / "visionx-logo.svg"
 
 print("==================================================")
-print("     VisionX IDE v1.6.2 - Engine Rebuild & Polish ")
+print("     VisionX IDE v1.6.3 - Engine Rebuild & Polish ")
 print("==================================================")
 
 # 1. Clean and extract
@@ -527,6 +527,20 @@ if main_impl.exists():
         txt = txt.replace("else if(n.agents)r=await this.windowsMainService.openAgentsWindow(a);", "else if(n.agents)return;")
         txt = txt.replace("if(s.agents)return r.openAgentsWindow({context:o,cli:s,initialStartup:!0});", "if(s.agents)return;")
         
+        # Globally route extensionsPath to ~/.vscode/extensions if present so all users get VS Code extensions out-of-the-box
+        old_ext = 'ce(this.userHome,this.productService.dataFolderName,"extensions").fsPath'
+        new_ext = '(()=>{let v=ce(this.userHome,".vscode","extensions").fsPath;try{if(require("fs").existsSync(v))return v;}catch{}return ce(this.userHome,".visionx","extensions").fsPath})()'
+        if old_ext in txt:
+            txt = txt.replace(old_ext, new_ext)
+            print("Patched extensionsPath in mainImpl.js to prioritize ~/.vscode/extensions")
+
+        # Disable native Windows titleBarOverlay so Electron renders HTML window controls
+        old_tbo = 'c.titleBarOverlay={height:29,color:f,symbolColor:g}'
+        new_tbo = 'c.titleBarOverlay=false'
+        if old_tbo in txt:
+            txt = txt.replace(old_tbo, new_tbo)
+            print("Disabled Windows native titleBarOverlay in mainImpl.js")
+
         t1 = "async openAgentsWindow(e,t,r,o,s=!1,a,l){"
         if t1 in txt:
             txt = txt.replace(t1, "async openAgentsWindow(e,t,r,o,s=!1,a,l){return [];")
@@ -582,10 +596,23 @@ if wb_js.exists():
             txt = txt.replace("async computeMigrationHint(e,t=Ie.None){", "async computeMigrationHint(e,t=Ie.None){return;")
             print("Disabled computeMigrationHint in workbench.desktop.main.js")
             
-        # Defeat integrity check in uwe class
+        # Force kUe to return false so HTML window controls with Mac traffic light CSS are created
+        old_kue = 'function kUe(s){if(jt||gT(s))return!1;if(!vt){let o=ubt(s);if(o==="custom"||o==="hidden")return!1}return!0}'
+        new_kue = 'function kUe(s){return!1}'
+        if old_kue in txt:
+            txt = txt.replace(old_kue, new_kue)
+            print("Forced kUe to return false for HTML traffic light window controls")
+
+        # Defeat integrity check in uwe class and eliminate all corrupt warnings
         if "this.isPurePromise=this._isPure(),this._compute()" in txt:
             txt = txt.replace("this.isPurePromise=this._isPure(),this._compute()", "this.isPurePromise=Promise.resolve({isPure:!0,proof:[]})")
             print("Neutered integrity isPurePromise in workbench.desktop.main.js")
+        if "||this._showNotification()" in txt:
+            txt = txt.replace("||this._showNotification()", "/* silenced notification */")
+            print("Silenced _showNotification invocation in workbench.desktop.main.js")
+        if "d(27370,null,this.productService.nameShort)" in txt:
+            txt = txt.replace("d(27370,null,this.productService.nameShort)", '""')
+            print("Cleared corrupt dialog string in workbench.desktop.main.js")
         if "_showNotification(){" in txt:
             txt = txt.replace("_showNotification(){", "_showNotification(){return;")
             print("Silenced _showNotification() in workbench.desktop.main.js")
@@ -677,8 +704,8 @@ try:
         "--set-version-string", "LegalCopyright", "Copyright (C) 2026 VisionX Contributors",
         "--set-version-string", "InternalName", "VisionX",
         "--set-version-string", "OriginalFilename", "VisionX.exe",
-        "--set-file-version", "1.6.2.0",
-        "--set-product-version", "1.6.2.0"
+        "--set-file-version", "1.6.3.0",
+        "--set-product-version", "1.6.3.0"
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode == 0:
@@ -689,5 +716,5 @@ except Exception as e:
     print("Could not run rcedit:", e)
 
 print("==================================================")
-print(" VisionX IDE v1.6.2 build completed successfully! ")
+print(" VisionX IDE v1.6.3 build completed successfully! ")
 print("==================================================")

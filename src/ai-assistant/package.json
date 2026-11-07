@@ -2,7 +2,7 @@
   "name": "visionx-ai-assistant",
   "displayName": "VisionX Chat & 3D Project Architecture",
   "description": "Native Copilot-style Chat, Sessions, and 3D Project Architecture Graph for VisionX IDE",
-  "version": "1.5.0",
+  "version": "1.6.3",
   "publisher": "VisionX",
   "engines": {
     "vscode": "^1.80.0"
@@ -27,9 +27,11 @@
           "id": "visionx-ai",
           "title": "Chat",
           "icon": "media/icon.svg"
-        },
+        }
+      ],
+      "panel": [
         {
-          "id": "visionx-graph",
+          "id": "visionx-graph-panel",
           "title": "Project Architecture Graph",
           "icon": "media/graph-icon.svg"
         }
@@ -43,11 +45,11 @@
           "name": "Chat"
         }
       ],
-      "visionx-graph": [
+      "visionx-graph-panel": [
         {
           "type": "webview",
           "id": "visionx.graphView",
-          "name": "Project Architecture Graph"
+          "name": "3D Project Architecture Graph"
         }
       ]
     },

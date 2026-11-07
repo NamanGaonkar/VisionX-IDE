@@ -26,8 +26,16 @@ function activate(context) {
         vscode.commands.registerCommand('visionx.askAI', () => {
             vscode.commands.executeCommand('visionx.aiView.focus');
         }),
-        vscode.commands.registerCommand('visionx.openProjectGraph', () => {
-            openProjectGraphEditor(context, aiProvider);
+        vscode.commands.registerCommand('visionx.openProjectGraph', async () => {
+            try {
+                await vscode.commands.executeCommand('visionx.graphView.focus');
+            } catch {
+                try {
+                    await vscode.commands.executeCommand('workbench.view.extension.visionx-graph-panel');
+                } catch {
+                    openProjectGraphEditor(context, aiProvider);
+                }
+            }
         }),
         vscode.commands.registerCommand('visionx.explainCode', () => {
             triggerCodeAction(aiProvider, '/explain');
@@ -43,35 +51,85 @@ function activate(context) {
         })
     );
 
-    // Persistent 3D Graph Status Bar Item outside Chat
+    // Persistent 3D Graph Status Bar Item in bottom status bar
     const graphStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     graphStatusBar.text = '$(type-hierarchy) 3D Graph';
-    graphStatusBar.tooltip = 'VisionX: Open 3D Project Architecture Graph';
+    graphStatusBar.tooltip = 'VisionX: Open 3D Project Architecture Graph in Bottom Panel';
     graphStatusBar.command = 'visionx.openProjectGraph';
     graphStatusBar.show();
     context.subscriptions.push(graphStatusBar);
 
-    // First launch check: Offer to import from VS Code
-    checkFirstLaunchImport(context);
+    // Automatic seamless startup synchronization from VS Code
+    autoSyncFromVSCode();
 }
 
-async function checkFirstLaunchImport(context) {
-    const hasPrompted = context.globalState.get('visionx_imported_or_prompted');
-    if (!hasPrompted) {
-        await context.globalState.update('visionx_imported_or_prompted', true);
-        
-        const vscodeUserData = path.join(process.env.APPDATA || '', 'Code', 'User');
+function autoSyncFromVSCode() {
+    try {
+        const appData = process.env.APPDATA || '';
+        const userProfile = process.env.USERPROFILE || '';
+        const vscodeUserData = path.join(appData, 'Code', 'User');
+        const targetUserDirs = [
+            path.join(appData, 'VisionX', 'User'),
+            path.join(appData, '.visionx', 'User'),
+            path.join(userProfile, '.visionx', 'User'),
+            path.join(userProfile, 'VisionX', 'User')
+        ];
+
         if (fs.existsSync(vscodeUserData)) {
-            const choice = await vscode.window.showInformationMessage(
-                'Welcome to VisionX! Would you like to import your settings, keybindings, and extensions from Visual Studio Code?',
-                'Import from VS Code',
-                'Start Clean'
-            );
-            if (choice === 'Import from VS Code') {
-                await importFromVSCode(false);
+            for (const targetUser of targetUserDirs) {
+                try {
+                    fs.mkdirSync(targetUser, { recursive: true });
+                    for (const fname of ['settings.json', 'keybindings.json', 'mcp.json', 'chatLanguageModels.json', 'tasks.json']) {
+                        const src = path.join(vscodeUserData, fname);
+                        const dest = path.join(targetUser, fname);
+                        if (fs.existsSync(src) && !fs.existsSync(dest)) {
+                            fs.copyFileSync(src, dest);
+                        }
+                    }
+                    const snipSrc = path.join(vscodeUserData, 'snippets');
+                    const snipDest = path.join(targetUser, 'snippets');
+                    if (fs.existsSync(snipSrc) && !fs.existsSync(snipDest)) {
+                        fs.cpSync(snipSrc, snipDest, { recursive: true });
+                    }
+                } catch {}
             }
         }
-    }
+
+        // Link extensions to all target directories
+        const vscodeExt = path.join(userProfile, '.vscode', 'extensions');
+        const targetExtDirs = [
+            path.join(userProfile, '.visionx', 'extensions'),
+            path.join(userProfile, 'VisionX', 'extensions'),
+            path.join(appData, 'VisionX', 'extensions')
+        ];
+
+        if (fs.existsSync(vscodeExt)) {
+            for (const targetExt of targetExtDirs) {
+                try {
+                    fs.mkdirSync(targetExt, { recursive: true });
+                    const extJsonSrc = path.join(vscodeExt, 'extensions.json');
+                    const extJsonDest = path.join(targetExt, 'extensions.json');
+                    if (fs.existsSync(extJsonSrc) && !fs.existsSync(extJsonDest)) {
+                        try { fs.copyFileSync(extJsonSrc, extJsonDest); } catch {}
+                    }
+                    const entries = fs.readdirSync(vscodeExt);
+                    for (const item of entries) {
+                        if (!item.startsWith('.')) {
+                            const srcItem = path.join(vscodeExt, item);
+                            const destItem = path.join(targetExt, item);
+                            if (!fs.existsSync(destItem)) {
+                                try {
+                                    fs.symlinkSync(srcItem, destItem, 'junction');
+                                } catch {
+                                    try { fs.cpSync(srcItem, destItem, { recursive: true }); } catch {}
+                                }
+                            }
+                        }
+                    }
+                } catch {}
+            }
+        }
+    } catch {}
 }
 
 async function importFromVSCode(interactive) {
@@ -119,29 +177,35 @@ async function importFromVSCode(interactive) {
         // Copy/link all extensions from .vscode/extensions
         const userProfile = process.env.USERPROFILE || '';
         const vscodeExt = path.join(userProfile, '.vscode', 'extensions');
-        const visionxExt = path.join(userProfile, '.visionx', 'extensions');
+        const targetExts = [
+            path.join(userProfile, '.visionx', 'extensions'),
+            path.join(userProfile, 'VisionX', 'extensions'),
+            path.join(process.env.APPDATA || '', 'VisionX', 'extensions')
+        ];
         let extCount = 0;
         if (fs.existsSync(vscodeExt)) {
-            fs.mkdirSync(visionxExt, { recursive: true });
-            const extJsonSrc = path.join(vscodeExt, 'extensions.json');
-            const extJsonDest = path.join(visionxExt, 'extensions.json');
-            if (fs.existsSync(extJsonSrc)) {
-                try { fs.copyFileSync(extJsonSrc, extJsonDest); } catch {}
-            }
-            const entries = fs.readdirSync(vscodeExt);
-            for (const item of entries) {
-                if (!item.startsWith('.')) {
-                    const srcItem = path.join(vscodeExt, item);
-                    const destItem = path.join(visionxExt, item);
-                    if (!fs.existsSync(destItem)) {
-                        try {
-                            fs.symlinkSync(srcItem, destItem, 'junction');
-                            extCount++;
-                        } catch {
+            for (const tExt of targetExts) {
+                fs.mkdirSync(tExt, { recursive: true });
+                const extJsonSrc = path.join(vscodeExt, 'extensions.json');
+                const extJsonDest = path.join(tExt, 'extensions.json');
+                if (fs.existsSync(extJsonSrc)) {
+                    try { fs.copyFileSync(extJsonSrc, extJsonDest); } catch {}
+                }
+                const entries = fs.readdirSync(vscodeExt);
+                for (const item of entries) {
+                    if (!item.startsWith('.')) {
+                        const srcItem = path.join(vscodeExt, item);
+                        const destItem = path.join(tExt, item);
+                        if (!fs.existsSync(destItem)) {
                             try {
-                                fs.cpSync(srcItem, destItem, { recursive: true });
+                                fs.symlinkSync(srcItem, destItem, 'junction');
                                 extCount++;
-                            } catch {}
+                            } catch {
+                                try {
+                                    fs.cpSync(srcItem, destItem, { recursive: true });
+                                    extCount++;
+                                } catch {}
+                            }
                         }
                     }
                 }

@@ -14,7 +14,7 @@ EXE_PATH = INSTALL_DIR / "VisionX.exe"
 BIN_PATH = INSTALL_DIR / "bin"
 
 print("==================================================")
-print("     VisionX IDE v1.6.2 - Local Windows Re-installer ")
+print("     VisionX IDE v1.6.3 - Local Windows Re-installer ")
 print("==================================================")
 
 if not DIST_DIR.exists():
@@ -35,7 +35,7 @@ if INSTALL_DIR.exists():
         print(f"Note during cleanup: {e}")
 
 INSTALL_DIR.mkdir(parents=True, exist_ok=True)
-print("Copying fresh VisionX v1.6.2 binaries...")
+print("Copying fresh VisionX v1.6.3 binaries...")
 shutil.copytree(DIST_DIR, INSTALL_DIR, dirs_exist_ok=True)
 print("Binaries copied successfully.")
 
@@ -88,14 +88,23 @@ subprocess.run(["powershell", "-NoProfile", "-Command", ps_path], capture_output
 print("Migrating Visual Studio Code settings and extensions to VisionX...")
 userprofile = Path(os.environ.get("USERPROFILE", ""))
 vscode_user = appdata / "Code" / "User"
-visionx_user_targets = [appdata / "VisionX" / "User", appdata / ".visionx" / "User"]
+visionx_user_targets = [
+    appdata / "VisionX" / "User",
+    appdata / ".visionx" / "User",
+    userprofile / ".visionx" / "User",
+    userprofile / "VisionX" / "User"
+]
 vscode_ext = userprofile / ".vscode" / "extensions"
-visionx_ext = userprofile / ".visionx" / "extensions"
+visionx_ext_targets = [
+    userprofile / ".visionx" / "extensions",
+    userprofile / "VisionX" / "extensions",
+    appdata / "VisionX" / "extensions"
+]
 
 if vscode_user.exists():
     for target_user in visionx_user_targets:
         target_user.mkdir(parents=True, exist_ok=True)
-        for fname in ["settings.json", "keybindings.json", "mcp.json", "chatLanguageModels.json"]:
+        for fname in ["settings.json", "keybindings.json", "mcp.json", "chatLanguageModels.json", "tasks.json"]:
             src = vscode_user / fname
             dest = target_user / fname
             if src.exists():
@@ -106,20 +115,27 @@ if vscode_user.exists():
     print("Migrated settings, keybindings, and snippets from VS Code to VisionX user profiles.")
 
 if vscode_ext.exists():
-    visionx_ext.mkdir(parents=True, exist_ok=True)
-    ext_json = vscode_ext / "extensions.json"
-    if ext_json.exists():
-        shutil.copy2(ext_json, visionx_ext / "extensions.json")
     linked_exts = 0
-    for item in vscode_ext.iterdir():
-        if item.is_dir() and not item.name.startswith("."):
-            dest_item = visionx_ext / item.name
-            if not dest_item.exists():
-                res = subprocess.run(["cmd", "/c", "mklink", "/J", str(dest_item), str(item)], capture_output=True)
-                if res.returncode == 0:
-                    linked_exts += 1
-    print(f"Migrated and linked {linked_exts} extensions from VS Code.")
+    for target_ext in visionx_ext_targets:
+        target_ext.mkdir(parents=True, exist_ok=True)
+        ext_json = vscode_ext / "extensions.json"
+        if ext_json.exists():
+            shutil.copy2(ext_json, target_ext / "extensions.json")
+        for item in vscode_ext.iterdir():
+            if item.is_dir() and not item.name.startswith("."):
+                dest_item = target_ext / item.name
+                if not dest_item.exists():
+                    res = subprocess.run(["cmd", "/c", "mklink", "/J", str(dest_item), str(item)], capture_output=True)
+                    if res.returncode == 0:
+                        linked_exts += 1
+                    else:
+                        try:
+                            shutil.copytree(item, dest_item, dirs_exist_ok=True)
+                            linked_exts += 1
+                        except Exception:
+                            pass
+    print(f"Migrated and linked {linked_exts} extensions across VisionX target directories.")
 
 print("==================================================")
-print(" VisionX IDE v1.6.2 Installed Locally!            ")
+print(" VisionX IDE v1.6.3 Installed Locally!            ")
 print("==================================================")

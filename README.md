@@ -6,15 +6,25 @@
 ### Autonomous AI and Spatial Developer Workspace
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://opensource.org/licenses/MIT)
-[![Release: v1.6.2](https://img.shields.io/badge/Release-v1.6.2-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.6.2)
+[![Release: v1.6.3](https://img.shields.io/badge/Release-v1.6.3-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.6.3)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-red.svg)]()
 [![Aesthetics](https://img.shields.io/badge/Aesthetics-Liquid%20Glass-ff5500.svg)]()
 [![AI Engine](https://img.shields.io/badge/AI%20Core-BYOK%20Dynamic%20Discovery-ffd700.svg)]()
 [![Extensions](https://img.shields.io/badge/Extensions-Open%20VSX-blue.svg)](https://open-vsx.org/)
 
-VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a sleek liquid glass dark obsidian aesthetic, native Bring-Your-Own-Key (BYOK) dynamic AI model discovery, an interactive 360-degree orbital 3D project architecture graph, macOS-style traffic light window controls, and full compatibility with the Open VSX extension ecosystem.
+VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a sleek liquid glass dark obsidian aesthetic, native Bring-Your-Own-Key (BYOK) dynamic AI model discovery, an interactive 360-degree orbital 3D project architecture graph in the bottom panel, macOS-style traffic light window controls, and seamless automatic migration of all VS Code extensions and settings.
 
 </div>
+
+---
+
+## What is New in v1.6.3
+
+- Bottom Panel 3D Project Architecture Graph: Relocated the 3D architecture graph from the sidebar view container directly into the bottom panel bar alongside Terminal, Output, and Problems. Easily toggled via the persistent bottom status bar item or Command Palette.
+- Native Visual Studio Code Extensions & Settings Auto-Sync: Engineered an engine-level extension resolver prioritizing `~/.vscode/extensions` so all extensions load instantly out-of-the-box for any user. Automatically mirrors settings, keybindings, snippets, and MCP configurations on startup with zero friction.
+- macOS Traffic Light Window Controls Enforcement: Disabled native Windows Window Controls Overlay (WCO) in Electron and forced renderer-level HTML controls with precision circular buttons (Red Close, Yellow Minimize, Green Maximize) matching macOS design standards.
+- Permanent Elimination of Corrupt Warnings: Fully neutralized internal engine integrity checks and checksum verification, preventing false "installation appears to be corrupt" dialogs across all processes.
+- Liquid Glass Frosted Theme Refinement: Enhanced multi-color syntax highlighting and obsidian surface contrasts.
 
 ---
 
