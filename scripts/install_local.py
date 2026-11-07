@@ -14,7 +14,7 @@ EXE_PATH = INSTALL_DIR / "VisionX.exe"
 BIN_PATH = INSTALL_DIR / "bin"
 
 print("==================================================")
-print("     VisionX IDE v1.7.0 - Local Windows Re-installer ")
+print("     VisionX IDE v1.7.1 - Local Windows Re-installer ")
 print("==================================================")
 
 if not DIST_DIR.exists():
@@ -35,7 +35,7 @@ if INSTALL_DIR.exists():
         print(f"Note during cleanup: {e}")
 
 INSTALL_DIR.mkdir(parents=True, exist_ok=True)
-print("Copying fresh VisionX v1.7.0 binaries...")
+print("Copying fresh VisionX v1.7.1 binaries...")
 shutil.copytree(DIST_DIR, INSTALL_DIR, dirs_exist_ok=True)
 print("Binaries copied successfully.")
 
@@ -49,7 +49,7 @@ if clp_dir.exists():
     except Exception:
         pass
 
-# Clean stale Windows Jump List destination files referencing --agents or Agents Window
+# Clean stale Windows Jump List destination files referencing --agents or Agents Window or sessions.ico
 appdata_recent = appdata / "Microsoft" / "Windows" / "Recent"
 for d in ["CustomDestinations", "AutomaticDestinations"]:
     folder = appdata_recent / d
@@ -57,7 +57,7 @@ for d in ["CustomDestinations", "AutomaticDestinations"]:
         for f in folder.iterdir():
             try:
                 content = f.read_bytes()
-                if b"--agents" in content or "Agents Window".encode("utf-16le") in content:
+                if b"--agents" in content or "Agents Window".encode("utf-16le") in content or b"sessions.ico" in content or "1ced32d74a95c7bc" in f.name:
                     f.unlink(missing_ok=True)
                     print(f"Purged stale jump list cache: {f.name}")
             except Exception:
@@ -151,5 +151,5 @@ if vscode_ext.exists():
     print(f"Migrated and linked {linked_exts} extensions across VisionX target directories.")
 
 print("==================================================")
-print(" VisionX IDE v1.7.0 Installed Locally!            ")
+print(" VisionX IDE v1.7.1 Installed Locally!            ")
 print("==================================================")

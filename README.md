@@ -6,15 +6,26 @@
 ### Autonomous AI and Spatial Developer Workspace
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://opensource.org/licenses/MIT)
-[![Release: v1.7.0](https://img.shields.io/badge/Release-v1.7.0-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.7.0)
+[![Release: v1.7.1](https://img.shields.io/badge/Release-v1.7.1-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.7.1)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-red.svg)]()
 [![Aesthetics](https://img.shields.io/badge/Aesthetics-Liquid%20Glass-ff5500.svg)]()
-[![AI Engine](https://img.shields.io/badge/AI%20Core-Cline%20Autonomous%20Agent-ffd700.svg)]()
+[![AI Engine](https://img.shields.io/badge/AI%20Core-VisionX%20Agentic%20Chat-ffd700.svg)]()
 [![Extensions](https://img.shields.io/badge/Extensions-Open%20VSX-blue.svg)](https://open-vsx.org/)
 
-VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a sleek liquid glass dark obsidian aesthetic, Cline as the built-in default autonomous coding agent (file editing, terminal execution, diffs, tool calling, multi-model BYOK, and local Ollama support), an interactive 360-degree orbital 3D project architecture graph in the bottom panel, macOS-style traffic light window controls, and seamless automatic migration of all VS Code extensions and settings.
+VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a sleek liquid glass dark obsidian aesthetic with modern rounded island cards, VisionX Agentic Chat as the built-in default autonomous coding agent (file editing, terminal execution, diffs, tool calling, multi-model BYOK, and local Ollama support), an interactive 360-degree orbital 3D project architecture graph in the bottom panel, macOS-style traffic light window controls, and seamless automatic migration of all VS Code extensions and settings.
 
 </div>
+
+---
+
+## What is New in v1.7.1
+
+- Rebranded VisionX Agentic Chat: Replaced all legacy robot head icons with the official glowing VisionX flame/V emblem and updated user-facing headers to "What can VisionX do for you?" and "VisionX Agentic Chat".
+- Title Bar Command Center Chat Toggle Button: Added a dedicated glowing VisionX "V" icon button right beside the Command Center search bar in the title bar for instant one-click toggle/focus of the agentic chat.
+- Modern Rounded Island Layout: Upgraded IDE workbench panels (Side Bar, Auxiliary Bar, Panel, and Editor Groups) into modern rounded floating cards (`border-radius: 10px`, crisp borders, subtle margins/shadows) inspired by modern cursor/island design.
+- Streamlined Chat Navigation: Stripped the Account profile button from the chat header bar, eliminated ClinePass and external account sign-in requirements, and removed external social links (X/Twitter, Discord, Reddit).
+- Cleaned Provider Selection: Removed internal `cline` (usage-billing) and `cline-pass` from the provider list while keeping all real AI providers (Ollama, Anthropic, OpenRouter, OpenAI, Bedrock, Gemini, DeepSeek, etc.) 100% intact.
+- Windows Taskbar Jump List Purge: Completely eliminated the legacy "Agents Window" task from the Windows taskbar right-click context menu by purifying both `CustomDestinations` and `AutomaticDestinations` caches.
 
 ---
 
