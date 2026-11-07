@@ -35,7 +35,7 @@ if INSTALL_DIR.exists():
         print(f"Note during cleanup: {e}")
 
 INSTALL_DIR.mkdir(parents=True, exist_ok=True)
-print("Copying fresh VisionX v1.3.0 binaries...")
+print("Copying fresh VisionX v1.4.0 binaries...")
 shutil.copytree(DIST_DIR, INSTALL_DIR, dirs_exist_ok=True)
 print("Binaries copied successfully.")
 
@@ -111,5 +111,5 @@ if vscode_ext.exists():
     print(f"Migrated and linked {linked_exts} extensions from VS Code.")
 
 print("==================================================")
-print(" VisionX IDE v1.3.0 Installed Locally!            ")
+print(" VisionX IDE v1.4.0 Installed Locally!            ")
 print("==================================================")

@@ -8,6 +8,16 @@ const newChatBtn = document.getElementById('new-chat-btn');
 const refreshChatBtn = document.getElementById('refresh-chat-btn');
 const headerSettingsBtn = document.getElementById('header-settings-btn');
 
+const sessionsToggle = document.getElementById('sessions-toggle');
+const sessionsDrawer = document.getElementById('sessions-drawer');
+const sessionsList = document.getElementById('sessions-list');
+const drawerNewSessionBtn = document.getElementById('drawer-new-session');
+const activeSessionName = document.getElementById('active-session-name');
+
+const linkOpenGraph = document.getElementById('link-open-graph');
+const cardCloseBtn = document.getElementById('card-close-btn');
+const customizationsCard = document.getElementById('customizations-card');
+
 const modelPillBtn = document.getElementById('model-pill-btn');
 const modelPillText = document.getElementById('model-pill-text');
 const modelPopover = document.getElementById('model-popover');
@@ -50,16 +60,23 @@ let currentSettings = {
   provider: 'openrouter',
   baseUrl: 'https://openrouter.ai/api/v1',
   apiKey: '',
-  model: 'Claude 3.7 Sonnet',
+  model: 'Copilot Fusion | Standard',
   customModel: '',
   discoveredModels: []
 };
 
+// Sessions Architecture
+let sessions = [
+  { id: 'session_1', title: 'Main Session', messages: [] }
+];
+let activeSessionId = 'session_1';
+
 let activeContext = { fileName: null, selection: null };
 let attachedImageBase64 = null;
 
-// Initial sync with extension
+// Initial sync
 vscode.postMessage({ type: 'getSettings' });
+vscode.postMessage({ type: 'getSessions' });
 setInterval(() => vscode.postMessage({ type: 'getActiveContext' }), 2000);
 
 window.addEventListener('message', event => {
@@ -79,6 +96,13 @@ window.addEventListener('message', event => {
       detectModels();
     }
     updatePill();
+  } else if (msg.type === 'sessionsLoaded') {
+    if (msg.sessions && msg.sessions.length > 0) {
+      sessions = msg.sessions;
+      activeSessionId = msg.activeSessionId || sessions[0].id;
+    }
+    renderActiveSessionMessages();
+    renderSessionsList();
   } else if (msg.type === 'activeContext') {
     activeContext = msg;
     if (msg.fileName) {
@@ -92,6 +116,128 @@ window.addEventListener('message', event => {
   }
 });
 
+// Sessions Management
+function getActiveSession() {
+  let s = sessions.find(x => x.id === activeSessionId);
+  if (!s) {
+    s = sessions[0];
+    activeSessionId = s.id;
+  }
+  return s;
+}
+
+function renderSessionsList() {
+  sessionsList.innerHTML = '';
+  sessions.forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'session-item' + (s.id === activeSessionId ? ' active' : '');
+    
+    const label = document.createElement('span');
+    label.textContent = s.title + ' (' + (s.messages ? s.messages.length : 0) + ')';
+    label.onclick = () => switchSession(s.id);
+
+    const del = document.createElement('span');
+    del.className = 'session-delete';
+    del.textContent = '✕';
+    del.onclick = (e) => {
+      e.stopPropagation();
+      deleteSession(s.id);
+    };
+
+    item.appendChild(label);
+    if (sessions.length > 1) {
+      item.appendChild(del);
+    }
+    sessionsList.appendChild(item);
+  });
+
+  const active = getActiveSession();
+  activeSessionName.textContent = '(' + active.title + ')';
+}
+
+function switchSession(id) {
+  activeSessionId = id;
+  renderActiveSessionMessages();
+  renderSessionsList();
+  sessionsDrawer.style.display = 'none';
+  saveSessionsToExtension();
+}
+
+function createNewSession() {
+  const newId = 'session_' + Date.now();
+  const num = sessions.length + 1;
+  const newSession = { id: newId, title: 'Session ' + num, messages: [] };
+  sessions.unshift(newSession);
+  activeSessionId = newId;
+  renderActiveSessionMessages();
+  renderSessionsList();
+  sessionsDrawer.style.display = 'none';
+  saveSessionsToExtension();
+}
+
+function deleteSession(id) {
+  sessions = sessions.filter(s => s.id !== id);
+  if (sessions.length === 0) {
+    sessions = [{ id: 'session_' + Date.now(), title: 'Main Session', messages: [] }];
+  }
+  if (activeSessionId === id) {
+    activeSessionId = sessions[0].id;
+  }
+  renderActiveSessionMessages();
+  renderSessionsList();
+  saveSessionsToExtension();
+}
+
+function saveSessionsToExtension() {
+  vscode.postMessage({ type: 'saveSessions', sessions, activeSessionId });
+}
+
+function renderActiveSessionMessages() {
+  chatMessages.innerHTML = '';
+  const current = getActiveSession();
+  if (!current.messages || current.messages.length === 0) {
+    if (emptyState) chatMessages.appendChild(emptyState);
+    return;
+  }
+
+  current.messages.forEach(m => {
+    if (m.role === 'user') {
+      appendUserMsg(m.content, false);
+    } else {
+      const el = appendAIMsg('', false);
+      renderMarkdown(el, m.content);
+    }
+  });
+}
+
+// Sessions Toggle
+sessionsToggle.onclick = () => {
+  const isShown = sessionsDrawer.style.display === 'flex';
+  sessionsDrawer.style.display = isShown ? 'none' : 'flex';
+};
+drawerNewSessionBtn.onclick = createNewSession;
+newChatBtn.onclick = createNewSession;
+refreshChatBtn.onclick = () => {
+  const s = getActiveSession();
+  s.messages = [];
+  renderActiveSessionMessages();
+  saveSessionsToExtension();
+};
+
+// Open Graph link handler
+if (linkOpenGraph) {
+  linkOpenGraph.onclick = (e) => {
+    e.preventDefault();
+    vscode.postMessage({ type: 'openProjectGraph' });
+  };
+}
+if (cardCloseBtn) {
+  cardCloseBtn.onclick = () => {
+    if (customizationsCard) customizationsCard.style.display = 'none';
+  };
+}
+
+// Provider Popover Handlers
 popProvider.onchange = () => {
   const prov = popProvider.value;
   if (PROVIDER_DEFAULTS[prov]) {
@@ -132,7 +278,7 @@ popSaveBtn.onclick = () => {
 };
 
 function updatePill() {
-  const active = currentSettings.customModel || currentSettings.model || 'Claude 3.7 Sonnet';
+  const active = currentSettings.customModel || currentSettings.model || 'Copilot Fusion | Standard';
   const name = active.split('/').pop().replace(/-20\d\d\d\d\d\d/g, '');
   modelPillText.textContent = name;
 }
@@ -158,11 +304,10 @@ async function detectModels() {
         models = (data.models || []).map(m => m.name);
       }
     } else if (provider === 'anthropic') {
-      models = ['claude-3-7-sonnet-20250219', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229'];
+      models = ['claude-3-7-sonnet-20250219', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022'];
     } else if (provider === 'gemini') {
-      models = ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'];
+      models = ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'];
     } else {
-      // Standard OpenAI-compatible /v1/models endpoint (Works for OpenRouter, OpenAI, Groq, Together, DeepSeek, Mistral, Cerebras, Fireworks, Cohere, LM Studio, Custom, etc.)
       const headers = { 'Authorization': 'Bearer ' + key };
       if (provider === 'openrouter') {
         headers['HTTP-Referer'] = 'https://visionx.dev';
@@ -203,17 +348,6 @@ function populateModelDropdown(models, selected) {
   }
 }
 
-// Clear Chat / New Chat
-newChatBtn.onclick = clearChat;
-refreshChatBtn.onclick = clearChat;
-
-function clearChat() {
-  chatMessages.innerHTML = '';
-  if (emptyState) {
-    chatMessages.appendChild(emptyState);
-  }
-}
-
 // Image upload
 imageUpload.onchange = (e) => {
   const file = e.target.files[0];
@@ -232,7 +366,7 @@ attachedImgTag.onclick = () => {
   imageUpload.value = '';
 };
 
-// Send on Enter
+// Send message
 sendBtn.onclick = handleSend;
 promptInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) {
@@ -250,8 +384,8 @@ async function handleSend() {
     emptyState.parentElement.removeChild(emptyState);
   }
 
-  appendUserMsg(text);
-  const aiMsgEl = appendAIMsg('Thinking...');
+  appendUserMsg(text, true);
+  const aiMsgEl = appendAIMsg('Thinking...', false);
 
   try {
     const chosenModel = currentSettings.customModel || currentSettings.model || popModel.value || 'claude-3.7-sonnet';
@@ -282,7 +416,6 @@ async function handleSend() {
         contents: [{ parts: [{ text: text + (activeContext.selection ? '\n\nCode Context:\n' + activeContext.selection : '') }] }]
       };
     } else {
-      // Universal OpenAI-compatible endpoint
       endpoint = baseUrl + '/chat/completions';
       if (currentSettings.apiKey) {
         headers['Authorization'] = 'Bearer ' + currentSettings.apiKey;
@@ -340,13 +473,24 @@ async function handleSend() {
       reply = data.choices && data.choices[0]?.message?.content || '';
     }
 
+    // Save to active session
+    const current = getActiveSession();
+    current.messages.push({ role: 'assistant', content: reply });
+    saveSessionsToExtension();
+
     renderMarkdown(aiMsgEl, reply);
   } catch (e) {
     aiMsgEl.innerHTML = 'Connection error: ' + e.message;
   }
 }
 
-function appendUserMsg(text) {
+function appendUserMsg(text, saveToHistory) {
+  if (saveToHistory) {
+    const current = getActiveSession();
+    current.messages.push({ role: 'user', content: text });
+    saveSessionsToExtension();
+  }
+
   const row = document.createElement('div');
   row.className = 'msg-row';
   const bubble = document.createElement('div');
@@ -380,7 +524,6 @@ function renderMarkdown(element, mdText) {
     const line = lines[i];
     if (line.startsWith('```')) {
       if (inCode) {
-        // End code block
         const container = document.createElement('div');
         container.className = 'code-container';
 

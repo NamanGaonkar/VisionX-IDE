@@ -1,8 +1,8 @@
 {
   "name": "visionx-ai-assistant",
-  "displayName": "VisionX Chat",
-  "description": "Native Copilot-style Chat & Autonomous Coding for VisionX IDE",
-  "version": "1.3.0",
+  "displayName": "VisionX Chat & Project Architecture",
+  "description": "Native Copilot-style Chat, Sessions, and 2D Project Architecture Graph for VisionX IDE",
+  "version": "1.4.0",
   "publisher": "VisionX",
   "engines": {
     "vscode": "^1.80.0"
@@ -10,10 +10,14 @@
   "main": "./extension.js",
   "categories": [
     "Machine Learning",
-    "Programming Languages"
+    "Programming Languages",
+    "Visualization"
   ],
   "activationEvents": [
     "onView:visionx.aiView",
+    "onView:visionx.graphView",
+    "onCommand:visionx.askAI",
+    "onCommand:visionx.openProjectGraph",
     "onStartupFinished"
   ],
   "contributes": {
@@ -23,6 +27,11 @@
           "id": "visionx-ai",
           "title": "Chat",
           "icon": "media/icon.svg"
+        },
+        {
+          "id": "visionx-graph",
+          "title": "Project Architecture Graph",
+          "icon": "media/graph-icon.svg"
         }
       ]
     },
@@ -33,13 +42,27 @@
           "id": "visionx.aiView",
           "name": "Chat"
         }
+      ],
+      "visionx-graph": [
+        {
+          "type": "webview",
+          "id": "visionx.graphView",
+          "name": "Project Architecture Graph"
+        }
       ]
     },
     "commands": [
       {
         "command": "visionx.askAI",
         "title": "VisionX: Open Chat",
-        "category": "VisionX"
+        "category": "VisionX",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "visionx.openProjectGraph",
+        "title": "VisionX: Open 2D Project Architecture Graph",
+        "category": "VisionX",
+        "icon": "$(type-hierarchy)"
       },
       {
         "command": "visionx.explainCode",
@@ -63,6 +86,16 @@
       }
     ],
     "menus": {
+      "commandCenter": [
+        {
+          "command": "visionx.askAI",
+          "group": "navigation@100"
+        },
+        {
+          "command": "visionx.openProjectGraph",
+          "group": "navigation@101"
+        }
+      ],
       "editor/context": [
         {
           "command": "visionx.explainCode",

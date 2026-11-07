@@ -17,7 +17,7 @@ ICON_PATH = BUILD_DIR / "icons" / "visionx.ico"
 LOGO_SVG_PATH = BASE_DIR / "src" / "branding" / "visionx-logo.svg"
 
 print("==================================================")
-print("     VisionX IDE v1.3.0 - Complete Engine Rebuild ")
+print("     VisionX IDE v1.4.0 - Complete Engine Rebuild ")
 print("==================================================")
 
 # 1. Clean and extract
@@ -86,6 +86,7 @@ if product_json_path.exists():
     product["configurationDefaults"]["workbench.startupEditor"] = "welcomePage"
     product["configurationDefaults"]["window.titleBarStyle"] = "custom"
     product["configurationDefaults"]["window.menuBarVisibility"] = "classic"
+    product["configurationDefaults"]["window.commandCenter"] = True
     product["configurationDefaults"]["workbench.layoutControl.enabled"] = True
 
     with open(product_json_path, "w", encoding="utf-8") as f:
@@ -117,9 +118,13 @@ if res_win32.exists():
         shutil.copy(png_128, res_win32 / "code_70x70.png")
 
 # 6. Replace ALL blue SVGs (titlebar, welcome, letterpress watermark) with VisionX Logo SVG
+logo_svg = ""
+logo_b64_url = ""
 if LOGO_SVG_PATH.exists():
     print("Replacing all legacy blue SVGs with official VisionX Logo SVG...")
     logo_svg = LOGO_SVG_PATH.read_text(encoding="utf-8")
+    b64_logo = base64.b64encode(LOGO_SVG_PATH.read_bytes()).decode("utf-8")
+    logo_b64_url = f"data:image/svg+xml;base64,{b64_logo}"
     replaced_count = 0
     for root, dirs, files in os.walk(VISIONX_DIST):
         for f in files:
@@ -150,12 +155,137 @@ if ext_dir.exists():
     shutil.copytree(BASE_DIR / "src" / "ai-assistant", target_ai)
 
 # 8. Inject Theme-Compatible Liquid Glass CSS into workbench stylesheet
-css_path = VISIONX_DIST / "resources" / "app" / "out" / "vs" / "workbench" / "workbench.desktop.main.css"
-if css_path.exists():
-    print("Injecting theme-compatible Liquid Glass CSS (rounded corners, solid titlebar, dynamic theme colors)...")
-    glass_css = """
+traffic_light_css = """
 /* ======================================================== */
-/* VisionX Symmetrical Geometry & Fluid Aesthetics (v1.2.0)  */
+/* macOS-Style Traffic Light Window Controls                */
+/* Red (Close) -> Yellow (Minimize) -> Green (Maximize)     */
+/* ======================================================== */
+.monaco-workbench .part.titlebar .window-controls-container {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 0 14px !important;
+  width: auto !important;
+}
+
+.monaco-workbench .part.titlebar .window-controls-container > .window-icon {
+  width: 13px !important;
+  height: 13px !important;
+  min-width: 13px !important;
+  max-width: 13px !important;
+  min-height: 13px !important;
+  max-height: 13px !important;
+  border-radius: 50% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 0px !important;
+  color: transparent !important;
+  transition: transform 0.15s ease, filter 0.15s ease, opacity 0.15s ease !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.monaco-workbench .part.titlebar .window-controls-container > .window-icon::before {
+  content: "" !important;
+  display: none !important;
+}
+
+/* Red (Close) */
+.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-close {
+  order: 1 !important;
+  background-color: #ff5f56 !important;
+  border: 1px solid #e0443e !important;
+  box-shadow: 0 0 5px rgba(255, 95, 86, 0.4) !important;
+}
+.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-close:hover {
+  background-color: #ff3b30 !important;
+  filter: brightness(1.15) !important;
+  transform: scale(1.15) !important;
+}
+
+/* Yellow (Minimize) */
+.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-minimize {
+  order: 2 !important;
+  background-color: #ffbd2e !important;
+  border: 1px solid #dea123 !important;
+  box-shadow: 0 0 5px rgba(255, 189, 46, 0.4) !important;
+}
+.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-minimize:hover {
+  background-color: #ffaa00 !important;
+  filter: brightness(1.15) !important;
+  transform: scale(1.15) !important;
+}
+
+/* Green (Maximize / Restore) */
+.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-max-restore {
+  order: 3 !important;
+  background-color: #27c93f !important;
+  border: 1px solid #1aab29 !important;
+  box-shadow: 0 0 5px rgba(39, 201, 63, 0.4) !important;
+}
+.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-max-restore:hover {
+  background-color: #20b034 !important;
+  filter: brightness(1.15) !important;
+  transform: scale(1.15) !important;
+}
+"""
+
+agent_branding_css = f"""
+/* ======================================================== */
+/* VisionX Agent Window & Setup Dialog Branding             */
+/* ======================================================== */
+.chat-setup-dialog.sessions-main-welcome-dialog .dialog-message-row > .dialog-icon.codicon,
+.chat-setup-dialog.sessions-welcome-dialog .dialog-message-row > .dialog-icon,
+.chat-setup-dialog .dialog-message-row > .dialog-icon,
+.sessions-welcome-dialog .dialog-icon,
+.sessions-main-welcome-dialog .dialog-icon,
+.dialog-icon.codicon-agent {{
+  background-image: url("{logo_b64_url}") !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  width: 72px !important;
+  height: 72px !important;
+  min-width: 72px !important;
+  min-height: 72px !important;
+  font-size: 0px !important;
+  color: transparent !important;
+  filter: drop-shadow(0 0 12px rgba(255, 120, 0, 0.45)) !important;
+}}
+
+.chat-setup-dialog.sessions-main-welcome-dialog .dialog-message-row > .dialog-icon.codicon::before,
+.chat-setup-dialog.sessions-welcome-dialog .dialog-message-row > .dialog-icon::before,
+.chat-setup-dialog .dialog-message-row > .dialog-icon::before,
+.sessions-welcome-dialog .dialog-icon::before,
+.sessions-main-welcome-dialog .dialog-icon::before,
+.dialog-icon.codicon-agent::before {{
+  content: "" !important;
+  display: none !important;
+}}
+
+.monaco-workbench .open-in-vscode-titlebar-widget > .open-in-vscode-titlebar-widget-icon {{
+  background-image: url("{logo_b64_url}") !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  filter: none !important;
+}}
+
+.monaco-workbench .action-label.codicon-fish1-happy,
+.monaco-workbench .action-label.codicon-fish1-neutral,
+.monaco-workbench .action-label.codicon-fish1-sad,
+.monaco-workbench .action-label.codicon-fish1-very-sad,
+.agents-aquarium-fish-layer {{
+  display: none !important;
+}}
+"""
+
+glass_css = """
+/* ======================================================== */
+/* VisionX Symmetrical Geometry & Fluid Aesthetics          */
 /* Fully Theme-Compatible: Uses active theme CSS variables  */
 /* ======================================================== */
 
@@ -227,25 +357,84 @@ if css_path.exists():
   border-radius: 6px !important;
 }
 """
-    with open(css_path, "a", encoding="utf-8") as f:
-        f.write("\n" + glass_css)
 
-# 8b. Neutralize installation corrupt/tamper integrity check and update checksums
-print("Neutralizing integrity checks and updating product checksums...")
+workbench_css = VISIONX_DIST / "resources" / "app" / "out" / "vs" / "workbench" / "workbench.desktop.main.css"
+if workbench_css.exists():
+    print("Injecting styles into workbench.desktop.main.css...")
+    with open(workbench_css, "a", encoding="utf-8") as f:
+        f.write("\n" + glass_css + "\n" + traffic_light_css + "\n" + agent_branding_css)
+
+sessions_css = VISIONX_DIST / "resources" / "app" / "out" / "vs" / "sessions" / "sessions.desktop.main.css"
+if sessions_css.exists():
+    print("Injecting styles into sessions.desktop.main.css...")
+    with open(sessions_css, "a", encoding="utf-8") as f:
+        f.write("\n" + traffic_light_css + "\n" + agent_branding_css)
+
+# 8b. Rebrand hardcoded VS Code / copilot-vscode strings in JS & NLS bundles
+print("Neutralizing VS Code and copilot-vscode strings in scripts & bundles...")
 app_out = VISIONX_DIST / "resources" / "app" / "out"
-js_files_to_patch = [
-    app_out / "vs" / "workbench" / "workbench.desktop.main.js",
-    app_out / "vs" / "sessions" / "sessions.desktop.main.js"
+
+string_replacements = [
+    ("copilot-vscode", "visionx"),
+    ("Return to VS Code Editor", "Return to VisionX Editor"),
+    ("Open in VS Code Editor Window", "Open in VisionX Editor Window"),
+    ("Open in VS Code", "Open in VisionX"),
+    ("Open VS Code Window", "Open VisionX Window"),
+    ("to VS Code Editor", "to VisionX Editor"),
 ]
-for p in js_files_to_patch:
+
+for bundle_path in [
+    app_out / "vs" / "workbench" / "workbench.desktop.main.js",
+    app_out / "vs" / "sessions" / "sessions.desktop.main.js",
+    app_out / "nls.messages.js",
+    app_out / "nls.messages.json"
+]:
+    if bundle_path.exists():
+        try:
+            txt = bundle_path.read_text(encoding="utf-8", errors="ignore")
+            changed = False
+            for old_s, new_s in string_replacements:
+                if old_s in txt:
+                    txt = txt.replace(old_s, new_s)
+                    changed = True
+            if changed:
+                bundle_path.write_text(txt, encoding="utf-8")
+                print(f"Rebranded strings in {bundle_path.name}")
+        except Exception as e:
+            print(f"Note patching {bundle_path.name}: {e}")
+
+# Rebrand Microsoft & GitHub Authentication landing pages
+ms_auth_html = ext_dir / "microsoft-authentication" / "media" / "index.html"
+if ms_auth_html.exists():
+    txt = ms_auth_html.read_text(encoding="utf-8")
+    txt = txt.replace("Visual Studio Code", "VisionX")
+    txt = txt.replace("https://code.visualstudio.com/", "https://github.com/NamanGaonkar/VisionX-IDE")
+    ms_auth_html.write_text(txt, encoding="utf-8")
+    print("Rebranded microsoft-authentication index.html")
+
+ms_auth_js = ext_dir / "microsoft-authentication" / "dist" / "extension.js"
+if ms_auth_js.exists():
+    txt = ms_auth_js.read_text(encoding="utf-8")
+    txt = txt.replace("Visual Studio Code", "VisionX")
+    txt = txt.replace("https://code.visualstudio.com/", "https://github.com/NamanGaonkar/VisionX-IDE")
+    ms_auth_js.write_text(txt, encoding="utf-8")
+    print("Rebranded microsoft-authentication extension.js")
+
+# 8c. Neutralize installation corrupt/tamper integrity check and update checksums
+print("Neutralizing integrity checks and updating product checksums...")
+for p in [app_out / "vs" / "workbench" / "workbench.desktop.main.js", app_out / "vs" / "sessions" / "sessions.desktop.main.js"]:
     if p.exists():
         try:
             txt = p.read_text(encoding="utf-8", errors="ignore")
-            target_str = "async _isPure(){let o=this.productService.checksums"
-            if target_str in txt:
-                txt = txt.replace(target_str, "async _isPure(){return{isPure:true,proof:[]};let o=this.productService.checksums")
-                p.write_text(txt, encoding="utf-8")
+            # 1. Defeat _showNotification
+            if "_showNotification(){" in txt:
+                txt = txt.replace("_showNotification(){", "_showNotification(){return;")
+                print(f"Silenced _showNotification() in {p.name}")
+            # 2. Defeat _isPure
+            if "async _isPure(){" in txt:
+                txt = txt.replace("async _isPure(){", "async _isPure(){return{isPure:true,proof:[]};")
                 print(f"Patched _isPure() in {p.name}")
+            p.write_text(txt, encoding="utf-8")
         except Exception as e:
             print(f"Note patching {p.name}: {e}")
 
@@ -289,5 +478,5 @@ except Exception as e:
     print("Could not run rcedit:", e)
 
 print("==================================================")
-print(" VisionX IDE v1.3.0 build completed successfully! ")
+print(" VisionX IDE v1.4.0 build completed successfully! ")
 print("==================================================")
