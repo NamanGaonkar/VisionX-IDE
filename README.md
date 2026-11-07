@@ -6,7 +6,7 @@
 ### Autonomous AI and Spatial Developer Workspace
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://opensource.org/licenses/MIT)
-[![Release: v1.6.0](https://img.shields.io/badge/Release-v1.6.0-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.6.0)
+[![Release: v1.6.1](https://img.shields.io/badge/Release-v1.6.1-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.6.1)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-red.svg)]()
 [![Aesthetics](https://img.shields.io/badge/Aesthetics-Solid%20Obsidian-ff5500.svg)]()
 [![AI Engine](https://img.shields.io/badge/AI%20Core-BYOK%20Dynamic%20Discovery-ffd700.svg)]()
@@ -15,6 +15,13 @@
 VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a solid dark obsidian interface, native Bring-Your-Own-Key (BYOK) dynamic AI model discovery, an interactive 360-degree orbital 3D project architecture graph, macOS-style traffic light window controls, and full compatibility with the Open VSX extension ecosystem.
 
 </div>
+
+---
+
+## What is New in v1.6.1
+
+- Complete Elimination of Agents Window: Fully purged the secondary Agents ("Sessions") window, background services, titlebar widgets, and command bindings. The entire secondary window lifecycle and all invocation paths have been neutralized, ensuring a focused single-window IDE experience.
+- Instant Guard for Sessions: Injected automatic window closure guards and disabled agent service preconditions (`chat.agent.enabled: false`) across the Electron main process and renderer.
 
 ---
 
@@ -70,7 +77,7 @@ VisionX is a high-velocity code editor and developer workspace built on an open-
 ## Installation and Quick Start
 
 ### Standalone Release (Windows x64)
-1. Download the latest release archive (`VisionX-Windows-x64-v1.6.0.zip`) from the Releases section.
+1. Download the latest release archive (`VisionX-Windows-x64-v1.6.1.zip`) from the Releases section.
 2. Extract the archive to your preferred folder.
 3. Run `VisionX.exe`.
 
@@ -113,7 +120,7 @@ visionx .
 VisionX produces clean executables with no adware or background telemetry:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 "dist\VisionX-Windows-x64-v1.6.0.zip"
+Get-FileHash -Algorithm SHA256 "dist\VisionX-Windows-x64-v1.6.1.zip"
 ```
 
 ---

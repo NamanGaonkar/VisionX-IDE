@@ -17,7 +17,7 @@ ICON_PATH = BUILD_DIR / "icons" / "visionx.ico"
 LOGO_SVG_PATH = BASE_DIR / "src" / "branding" / "visionx-logo.svg"
 
 print("==================================================")
-print("     VisionX IDE v1.6.0 - Engine Rebuild & Polish ")
+print("     VisionX IDE v1.6.1 - Engine Rebuild & Polish ")
 print("==================================================")
 
 # 1. Clean and extract
@@ -90,6 +90,7 @@ if product_json_path.exists():
     product["configurationDefaults"]["window.menuBarVisibility"] = "classic"
     product["configurationDefaults"]["window.commandCenter"] = True
     product["configurationDefaults"]["workbench.layoutControl.enabled"] = True
+    product["configurationDefaults"]["chat.agent.enabled"] = False
 
     with open(product_json_path, "w", encoding="utf-8") as f:
         json.dump(product, f, indent=2)
@@ -456,7 +457,20 @@ html, body, .monaco-workbench {
 .monaco-workbench .part.titlebar [aria-label*="Account"],
 .monaco-workbench .accounts-view-bar-icon,
 .monaco-workbench .codicon-account,
-[id="workbench.actions.manageAccounts"] {
+[id="workbench.actions.manageAccounts"],
+/* Completely eliminate Agents Window and all associated widgets */
+[id*="openAgentsWindow"],
+[id*="openWorkspaceInAgentsWindow"],
+[id*="openSessionInAgentsWindow"],
+.open-in-vscode-titlebar-widget,
+.open-in-agents-window,
+.agents-titlebar-widget,
+.agent-sessions-workbench,
+.sessions-welcome-dialog,
+.chat-setup-dialog,
+.agents-aquarium-fish-layer,
+.action-label.codicon-agent,
+.codicon-agent {
   display: none !important;
   visibility: hidden !important;
   width: 0px !important;
@@ -484,11 +498,26 @@ if sessions_css.exists():
     with open(sessions_css, "a", encoding="utf-8") as f:
         f.write("\n" + traffic_light_css + "\n" + agent_branding_css)
 
-# 8b. Rebrand hardcoded VS Code / copilot-vscode strings in JS & NLS bundles
-print("Neutralizing VS Code and copilot-vscode strings in scripts & bundles...")
+# 8b. Neutralize Agents window and rebrand strings in JS & NLS bundles
+print("Completely eliminating Agents window functionality...")
 app_out = VISIONX_DIST / "resources" / "app" / "out"
+main_impl = app_out / "mainImpl.js"
+if main_impl.exists():
+    try:
+        txt = main_impl.read_text(encoding="utf-8", errors="ignore")
+        t1 = "async openAgentsWindow(e,t,r,o,s=!1,a,l){"
+        if t1 in txt:
+            txt = txt.replace(t1, "async openAgentsWindow(e,t,r,o,s=!1,a,l){return [];")
+            print("Disabled openAgentsWindow in mainImpl.js (manager)")
+        t2 = "async openAgentsWindow(e,t){let r=await this.windowsMainService.openAgentsWindow"
+        if t2 in txt:
+            txt = txt.replace(t2, "async openAgentsWindow(e,t){return;let r=await this.windowsMainService.openAgentsWindow")
+            print("Disabled openAgentsWindow in mainImpl.js (service)")
+        main_impl.write_text(txt, encoding="utf-8")
+    except Exception as e:
+        print(f"Note disabling agents in mainImpl: {e}")
 
-# Disable Accounts/Profile action registration in workbench.desktop.main.js
+# Disable Accounts/Profile action registration and Agents window in workbench.desktop.main.js
 wb_js = app_out / "vs" / "workbench" / "workbench.desktop.main.js"
 if wb_js.exists():
     try:
@@ -497,10 +526,30 @@ if wb_js.exists():
         new_acc = "false&&this.globalActivityActionBar.push(this.accountAction,{index:bj.ACCOUNTS_ACTION_INDEX})"
         if old_acc in txt:
             txt = txt.replace(old_acc, new_acc)
-            wb_js.write_text(txt, encoding="utf-8")
             print("Successfully disabled Accounts/Profile activity bar icon registration in workbench.desktop.main.js")
+        
+        # Disable Agent precondition XA
+        if 'D.has("config.chat.agent.enabled")' in txt:
+            txt = txt.replace('D.has("config.chat.agent.enabled")', 'D.False')
+            print("Disabled Agent precondition XA in workbench.desktop.main.js")
+            
+        txt = txt.replace("await o.get(Po).openAgentsWindow({", "return; await o.get(Po).openAgentsWindow({")
+        txt = txt.replace("await t.openAgentsWindow({...e,", "return; await t.openAgentsWindow({...e,")
+        txt = txt.replace("await i.openAgentsWindow({folderUri:", "return; await i.openAgentsWindow({folderUri:")
+        txt = txt.replace("await this.nativeHostService.openAgentsWindow({", "return; await this.nativeHostService.openAgentsWindow({")
+        
+        wb_js.write_text(txt, encoding="utf-8")
     except Exception as e:
-        print(f"Note patching accounts: {e}")
+        print(f"Note patching workbench.desktop.main.js: {e}")
+
+sessions_js = VISIONX_DIST / "resources" / "app" / "out" / "vs" / "sessions" / "sessions.desktop.main.js"
+if sessions_js.exists():
+    try:
+        txt = sessions_js.read_text(encoding="utf-8", errors="ignore")
+        sessions_js.write_text("window.close();\n" + txt, encoding="utf-8")
+        print("Injected auto-close guard into sessions.desktop.main.js")
+    except Exception as e:
+        print(f"Note injecting sessions auto-close: {e}")
 
 string_replacements = [
     ("copilot-vscode", "visionx"),
@@ -594,8 +643,8 @@ try:
         "--set-version-string", "LegalCopyright", "Copyright (C) 2026 VisionX Contributors",
         "--set-version-string", "InternalName", "VisionX",
         "--set-version-string", "OriginalFilename", "VisionX.exe",
-        "--set-file-version", "1.6.0.0",
-        "--set-product-version", "1.6.0.0"
+        "--set-file-version", "1.6.1.0",
+        "--set-product-version", "1.6.1.0"
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode == 0:
@@ -606,5 +655,5 @@ except Exception as e:
     print("Could not run rcedit:", e)
 
 print("==================================================")
-print(" VisionX IDE v1.6.0 build completed successfully! ")
+print(" VisionX IDE v1.6.1 build completed successfully! ")
 print("==================================================")
