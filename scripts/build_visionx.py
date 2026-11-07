@@ -17,7 +17,7 @@ ICON_PATH = BUILD_DIR / "icons" / "visionx.ico"
 LOGO_SVG_PATH = BASE_DIR / "src" / "branding" / "visionx-logo.svg"
 
 print("==================================================")
-print("     VisionX IDE v1.7.2 - Built-in Agentic Chat ")
+print("     VisionX IDE v1.7.3 - Built-in Agentic Chat ")
 print("==================================================")
 
 # 1. Clean and extract
@@ -110,7 +110,7 @@ if product_json_path.exists():
     })
     product["builtInExtensions"].append({
         "name": "visionx.visionx-project-graph",
-        "version": "1.7.2",
+        "version": "1.7.3",
         "repo": "https://github.com/NamanGaonkar/VisionX-IDE"
     })
 
@@ -268,25 +268,20 @@ if ext_dir.exists():
             commands.insert(0, {
                 "command": "claude-dev.SidebarProvider.focus",
                 "title": "VisionX Agentic Chat",
-                "icon": {
-                    "dark": "./assets/icons/chat-v-icon.svg",
-                    "light": "./assets/icons/chat-v-icon.svg"
-                }
+                "icon": "$(comment-discussion)"
             })
         else:
             for c in commands:
                 if c.get("command") == "claude-dev.SidebarProvider.focus":
-                    c["icon"] = {
-                        "dark": "./assets/icons/chat-v-icon.svg",
-                        "light": "./assets/icons/chat-v-icon.svg"
-                    }
+                    c["icon"] = "$(comment-discussion)"
                     c["title"] = "VisionX Agentic Chat"
         cline_pkg["contributes"]["commands"] = commands
 
         menus = cline_pkg.get("contributes", {}).get("menus", {})
         menus["commandCenter"] = [{
             "command": "claude-dev.SidebarProvider.focus",
-            "group": "navigation@100"
+            "group": "navigation",
+            "order": 1
         }]
         cline_pkg["contributes"]["menus"] = menus
 
@@ -328,6 +323,7 @@ if ext_dir.exists():
 
     # Patch Chat Webview UI: strip Account, remove Cline provider, replace robot logo with VisionX logo, remove socials, rebrand
     wv_idx = target_cline / "webview-ui" / "build" / "assets" / "index.js"
+    wv_css = target_cline / "webview-ui" / "build" / "assets" / "index.css"
     if wv_idx.exists():
         import re
         wv_code = wv_idx.read_text(encoding="utf-8", errors="ignore")
@@ -337,46 +333,61 @@ if ext_dir.exists():
 
         # 2. Strip cline and cline-pass from provider selection list (keep all real providers intact)
         wv_code = wv_code.replace(',rgn,ogn,', ',')
-        wv_code = re.sub(r'\{id:"cline-pass",name:"ClinePass",description:"ClinePass model provider[^\}]*defaults:\{baseUrl:"[^\"]*"\}\},?', '', wv_code)
 
-        # 3. Replace robot head logos (pbt and aQn) with VisionX glowing V logo component
-        vx_logo_comp = 'e=>{const{environment:t,...i}=e;return x.jsxs("svg",{fill:"none",role:"img",viewBox:"0 0 512 512",xmlns:"http://www.w3.org/2000/svg",...i,children:[x.jsx("rect",{x:"24",y:"24",width:"464",height:"464",rx:"100",fill:"#080a10",stroke:"#ff4400",strokeWidth:"12"}),x.jsx("path",{d:"M100 130 L160 130 L256 320 L352 130 L412 130 L286 370 L256 420 L226 370 Z",fill:"#cc0000",opacity:"0.85"}),x.jsx("path",{d:"M128 144 L196 144 L256 270 L316 144 L384 144 L276 360 L256 400 L236 360 Z",fill:"#ff6600"}),x.jsx("path",{d:"M208 240 L256 340 L304 240 L276 240 L256 280 L236 240 Z",fill:"#fff3a8",opacity:"0.9"})]})};'
-
-        pbt_idx = wv_code.find('pbt=e=>{')
-        if pbt_idx != -1:
-            pbt_end = wv_code.find('};', pbt_idx)
-            if pbt_end != -1:
-                wv_code = wv_code[:pbt_idx] + 'pbt=' + vx_logo_comp + wv_code[pbt_end+2:]
-                print("Replaced pbt robot logo with VisionX glowing V logo component.")
-
-        aqn_idx = wv_code.find('aQn=e=>{')
-        if aqn_idx != -1:
-            aqn_end = wv_code.find('};', aqn_idx)
-            if aqn_end != -1:
-                wv_code = wv_code[:aqn_idx] + 'aQn=' + vx_logo_comp + wv_code[aqn_end+2:]
-                print("Replaced aQn robot logo with VisionX glowing V logo component.")
-
-        lnt_idx = wv_code.find('LNt=e=>')
-        if lnt_idx != -1:
-            lnt_end = wv_code.find(',Xea=', lnt_idx)
-            if lnt_end != -1:
-                wv_code = wv_code[:lnt_idx] + 'LNt=' + vx_logo_comp[:-1] + wv_code[lnt_end:]
-                print("Replaced LNt robot logo with VisionX glowing V logo component.")
-
-        # 4. Neutralize external social links
+        # 3. Neutralize external social links
         wv_code = wv_code.replace('href:"https://x.com/cline"', 'style:{display:"none"}')
         wv_code = wv_code.replace('href:"https://discord.gg/cline"', 'style:{display:"none"}')
         wv_code = wv_code.replace('href:"https://www.reddit.com/r/cline/"', 'style:{display:"none"}')
         wv_code = wv_code.replace('" r/cline"', '""')
 
-        # 5. Rebrand user-facing headings
+        # 4. Rebrand user-facing headings
         wv_code = wv_code.replace('"What can I do for you?"', '"What can VisionX do for you?"')
         wv_code = wv_code.replace('"Sign up with Cline"', '"VisionX Agentic Chat"')
         wv_code = wv_code.replace('"Welcome to Cline"', '"Welcome to VisionX Agentic Chat"')
         wv_code = wv_code.replace('"About Cline"', '"About VisionX Agentic Chat"')
 
         wv_idx.write_text(wv_code, encoding="utf-8")
-        print("Patched Chat Webview UI: stripped Account, removed Cline provider, replaced logo, removed socials, rebranded.")
+
+        # Verify syntax with node --check to guarantee zero AST/syntax regressions
+        res = subprocess.run(["node", "--check", str(wv_idx)], capture_output=True, text=True)
+        if res.returncode != 0:
+            raise RuntimeError(f"Syntax validation failed on webview index.js: {res.stderr}")
+        print("Patched Chat Webview UI: stripped Account, removed Cline provider, removed socials, rebranded.")
+        print("Verified webview index.js syntax with node --check: 100% valid.")
+
+    if wv_css.exists():
+        chat_custom_css = """
+/* VisionX Theme & Brand Customizations for Agentic Chat */
+[data-testid="tab-account"] {
+  display: none !important;
+}
+div:has(> [class*="ClinePass"]),
+[class*="clinepass"],
+[class*="ClinePass"] {
+  display: none !important;
+}
+/* Replace robot head logo with glowing VisionX logo */
+svg[viewBox="0 0 113 113"],
+svg[viewBox="0 0 66.62 63.92"] {
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect x='24' y='24' width='464' height='464' rx='100' fill='%23080a10' stroke='%23ff4400' stroke-width='12'/><path d='M100 130 L160 130 L256 320 L352 130 L412 130 L286 370 L256 420 L226 370 Z' fill='%23cc0000' opacity='0.85'/><path d='M128 144 L196 144 L256 270 L316 144 L384 144 L276 360 L256 400 L236 360 Z' fill='%23ff6600'/><path d='M208 240 L256 340 L304 240 L276 240 L256 280 L236 240 Z' fill='%23fff3a8' opacity='0.9'/></svg>") no-repeat center !important;
+  background-size: contain !important;
+  border-radius: 12px !important;
+  width: 54px !important;
+  height: 54px !important;
+  display: inline-block !important;
+}
+svg[viewBox="0 0 113 113"] > *,
+svg[viewBox="0 0 66.62 63.92"] > * {
+  display: none !important;
+  opacity: 0 !important;
+}
+textarea, input, select, button {
+  border-radius: 8px !important;
+}
+"""
+        with open(wv_css, "a", encoding="utf-8") as f:
+            f.write("\n" + chat_custom_css)
+        print("Injected VisionX logo and styling into webview index.css.")
 
 # 8. macOS-Style Traffic Light Window Controls CSS matching uploaded image
 traffic_light_css = f"""
@@ -871,31 +882,61 @@ glass_css = """
 }
 
 /* ======================================================== */
-/* Modern Rounded Island Layout for Editor Groups           */
+/* Modern Rounded Island Layout for Editor Groups & Panels  */
 /* ======================================================== */
 .monaco-workbench.vs-dark .part.editor .editor-group-container,
 .monaco-workbench.hc-black .part.editor .editor-group-container {
-  border-radius: 8px !important;
+  border-radius: 10px !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
 .monaco-workbench.vs .part.editor .editor-group-container,
 .monaco-workbench.hc-light .part.editor .editor-group-container {
-  border-radius: 8px !important;
+  border-radius: 10px !important;
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
+.monaco-workbench .part.panel {
+  border-radius: 10px 10px 0 0 !important;
+}
+
+.monaco-workbench .part.sidebar {
+  border-radius: 0 10px 10px 0 !important;
+}
+
+.monaco-workbench .part.auxiliarybar {
+  border-radius: 10px 0 0 10px !important;
+}
+
+.monaco-workbench .terminal-tab {
+  border-radius: 6px !important;
+}
+
 /* Glowing VisionX Chat Toggle Button in Title Bar Command Center */
+.monaco-workbench .part.titlebar .codicon-comment-discussion,
+.monaco-workbench .part.titlebar .command-center .action-item [class*="codicon-comment-discussion"],
 .monaco-workbench .part.titlebar .command-center .action-item:has([class*="chat-v-icon"]),
 .monaco-workbench .part.titlebar .command-center .action-item [class*="chat-v-icon"],
 .monaco-workbench .part.titlebar [id*="claude-dev.SidebarProvider.focus"],
 .monaco-workbench .part.titlebar .action-item a[aria-label*="VisionX Agentic Chat"],
 .monaco-workbench .part.titlebar .action-item a[aria-label*="VisionX Chat"] {
+  background-image: url("{logo_b64_url}") !important;
+  background-size: 16px !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  width: 22px !important;
+  height: 22px !important;
   border-radius: 6px !important;
   transition: all 0.2s ease !important;
 }
+.monaco-workbench .part.titlebar .codicon-comment-discussion::before,
+.monaco-workbench .part.titlebar .command-center .action-item [class*="codicon-comment-discussion"]::before {
+  content: "" !important;
+  display: none !important;
+}
 .monaco-workbench.vs-dark .part.titlebar .command-center .action-item:has([class*="chat-v-icon"]):hover,
 .monaco-workbench.hc-black .part.titlebar .command-center .action-item:has([class*="chat-v-icon"]):hover,
+.monaco-workbench.vs-dark .part.titlebar .action-item:has(.codicon-comment-discussion):hover,
 .monaco-workbench.vs-dark .part.titlebar [id*="claude-dev.SidebarProvider.focus"]:hover {
   background: rgba(255, 85, 0, 0.22) !important;
   box-shadow: 0 0 12px rgba(255, 85, 0, 0.45) !important;
@@ -1143,8 +1184,8 @@ try:
         "--set-version-string", "LegalCopyright", "Copyright (C) 2026 VisionX Contributors",
         "--set-version-string", "InternalName", "VisionX",
         "--set-version-string", "OriginalFilename", "VisionX.exe",
-        "--set-file-version", "1.7.2.0",
-        "--set-product-version", "1.7.2.0"
+        "--set-file-version", "1.7.3.0",
+        "--set-product-version", "1.7.3.0"
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode == 0:
@@ -1155,5 +1196,5 @@ except Exception as e:
     print("Could not run rcedit:", e)
 
 print("==================================================")
-print(" VisionX IDE v1.7.2 build completed successfully! ")
+print(" VisionX IDE v1.7.3 build completed successfully! ")
 print("==================================================")

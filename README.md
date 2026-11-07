@@ -6,7 +6,7 @@
 ### Autonomous AI and Spatial Developer Workspace
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://opensource.org/licenses/MIT)
-[![Release: v1.7.2](https://img.shields.io/badge/Release-v1.7.2-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.7.2)
+[![Release: v1.7.3](https://img.shields.io/badge/Release-v1.7.3-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.7.3)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-red.svg)]()
 [![Aesthetics](https://img.shields.io/badge/Aesthetics-Liquid%20Glass-ff5500.svg)]()
 [![AI Engine](https://img.shields.io/badge/AI%20Core-VisionX%20Agentic%20Chat-ffd700.svg)]()
@@ -15,6 +15,17 @@
 VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a sleek liquid glass dark obsidian aesthetic with modern rounded island cards, VisionX Agentic Chat as the built-in default autonomous coding agent (file editing, terminal execution, diffs, tool calling, multi-model BYOK, and local Ollama support), an interactive 360-degree orbital 3D project architecture graph in the bottom panel, macOS-style traffic light window controls, and seamless automatic migration of all VS Code extensions and settings.
 
 </div>
+
+---
+
+## What is New in v1.7.3
+
+- Resolved Webview Black Screen: Fixed AST syntax error in minified `index.js` by preserving closures and delegating visual rebranding to declarative stylesheets. Verified with `node --check` validation during build.
+- Accelerated IDE Startup and Eliminated Extension Host Freezes: Removed multi-directory duplicate junction links across `%APPDATA%` and `%USERPROFILE%`. Extensions now load cleanly without recursive scanning delays, restoring instant launch times.
+- Complete Taskbar Jump List Purge: Thoroughly unlinked stale `1ced32d74a95c7bc` and `437bf6a9c72f8612` jump list caches, completely removing the legacy "Agents Window" task from the Windows taskbar right-click context menu.
+- Title Bar Search Bar Chat Button: Integrated glowing VisionX "V" emblem button directly beside the Command Center search bar for instant toggling of VisionX Agentic Chat.
+- Rounded Modern Cards and Island Aesthetics: Applied cohesive rounded cards across editor groups, terminal panels, sidebars, and chat webview inputs matching modern VS Code UI styling.
+- Cleaned Provider Selection: Kept all real AI providers (Ollama, Anthropic, OpenRouter, OpenAI, Bedrock, Gemini, DeepSeek, etc.) while eliminating vendor account sign-in requirements and social links.
 
 ---
 
