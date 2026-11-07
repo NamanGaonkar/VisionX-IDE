@@ -660,42 +660,55 @@ async function fetchProviderModels(provider, baseUrl, apiKey) {
     }
 
     if (provider === 'ollama' || provider === 'ollama_cloud') {
-        if (!baseUrl) {
-            baseUrl = 'http://localhost:11434';
+        let raw = baseUrl || 'http://localhost:11434';
+        if (!raw.startsWith('http://') && !raw.startsWith('https://')) {
+            raw = 'http://' + raw;
         }
-        let models = [];
-        
-        // 1. Native Ollama /api/tags
+
+        if (raw.includes('ollama.com')) {
+            throw new Error('ollama.com is a web portal, not an API server. Ollama runs on http://localhost:11434 or on your private server IP (e.g. http://192.168.1.100:11434).');
+        }
+
+        const baseHost = raw.replace(/\/(v1\/chat\/completions|api\/chat|api\/generate|v1|api)$/, '').replace(/\/+$/, '');
+        let lastError = null;
+
+        // 1. Try native Ollama /api/tags
         try {
-            const resp = await fetch(`${baseUrl}/api/tags`, {
+            const resp = await fetch(`${baseHost}/api/tags`, {
                 headers,
                 signal: AbortSignal.timeout(6000)
             });
             if (resp.ok) {
                 const data = await resp.json();
-                if (Array.isArray(data.models)) {
-                    models = data.models.map(m => m.name || m.model).filter(Boolean);
+                if (Array.isArray(data.models) && data.models.length > 0) {
+                    return data.models.map(m => m.name || m.model).filter(Boolean);
                 }
+            } else {
+                lastError = `HTTP ${resp.status} from ${baseHost}/api/tags`;
             }
-        } catch (e) {}
-
-        // 2. OpenAI-compatible /v1/models (modern Ollama, cloud Ollama proxies, LiteLLM)
-        if (models.length === 0) {
-            try {
-                const resp = await fetch(`${baseUrl}/v1/models`, {
-                    headers,
-                    signal: AbortSignal.timeout(6000)
-                });
-                if (resp.ok) {
-                    const data = await resp.json();
-                    const list = data.data || data.models || [];
-                    models = list.map(m => typeof m === 'string' ? m : (m.id || m.name)).filter(Boolean);
-                }
-            } catch (e) {}
+        } catch (e) {
+            lastError = e.message;
         }
 
-        if (models.length > 0) return models;
-        return ['llama3.3', 'llama3.2', 'deepseek-r1', 'qwen2.5-coder', 'mistral', 'codellama', 'phi4', 'gemma2'];
+        // 2. Try OpenAI-compatible /v1/models (modern Ollama, cloud Ollama proxies, LiteLLM)
+        try {
+            const resp = await fetch(`${baseHost}/v1/models`, {
+                headers,
+                signal: AbortSignal.timeout(6000)
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                const list = data.data || data.models || [];
+                const found = list.map(m => typeof m === 'string' ? m : (m.id || m.name)).filter(Boolean);
+                if (found.length > 0) return found;
+            } else {
+                lastError = `HTTP ${resp.status} from ${baseHost}/v1/models`;
+            }
+        } catch (e) {
+            lastError = e.message;
+        }
+
+        throw new Error(`Could not reach Ollama at ${baseHost} (${lastError || 'Unreachable'}). Ensure Ollama is running ('ollama serve') or check your host URL.`);
     }
 
     if (provider === 'anthropic') {
@@ -727,9 +740,13 @@ async function fetchProviderModels(provider, baseUrl, apiKey) {
         return ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-pro'];
     }
 
-    const url = `${baseUrl}/models`;
+    let scanUrl = baseUrl;
+    if (!scanUrl.endsWith('/models')) {
+        scanUrl = scanUrl.endsWith('/') ? `${scanUrl}models` : `${scanUrl}/models`;
+    }
+
     try {
-        const resp = await fetch(url, {
+        const resp = await fetch(scanUrl, {
             headers,
             signal: AbortSignal.timeout(8000)
         });
@@ -739,7 +756,11 @@ async function fetchProviderModels(provider, baseUrl, apiKey) {
             const models = rawList.map(m => typeof m === 'string' ? m : (m.id || m.name)).filter(Boolean);
             if (models.length > 0) return models;
         }
-    } catch (e) {}
+    } catch (e) {
+        if (apiKey) {
+            throw new Error(`Model scan failed from ${scanUrl}: ${e.message}`);
+        }
+    }
 
     const defaults = {
         openrouter: ['anthropic/claude-3.7-sonnet', 'openai/gpt-4o', 'deepseek/deepseek-r1', 'meta-llama/llama-3.3-70b-instruct', 'qwen/qwen-2.5-coder-32b-instruct'],
@@ -753,74 +774,88 @@ async function fetchProviderModels(provider, baseUrl, apiKey) {
 }
 
 async function executeChatCompletion({ provider, baseUrl, apiKey, model, prompt, messages }) {
-    baseUrl = (baseUrl || '').trim().replace(/\/+$/, '');
-    model = model || 'claude-3.7-sonnet';
+    model = (model || 'llama3.3').trim();
 
     if (provider === 'ollama' || provider === 'ollama_cloud') {
-        if (!baseUrl) baseUrl = 'http://localhost:11434';
+        let raw = (baseUrl || 'http://localhost:11434').trim().replace(/\/+$/, '');
+        if (!raw.startsWith('http://') && !raw.startsWith('https://')) {
+            raw = 'http://' + raw;
+        }
+
+        if (raw.includes('ollama.com')) {
+            throw new Error('ollama.com is a web portal, not an API server. Ollama runs on http://localhost:11434 or on your private server IP (e.g. http://192.168.1.100:11434).');
+        }
+
+        const baseHost = raw.replace(/\/(v1\/chat\/completions|api\/chat|api\/generate|v1|api)$/, '').replace(/\/+$/, '');
         const ollamaHeaders = {
             'Content-Type': 'application/json',
             ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
         };
-        
-        // 1. Try OpenAI-compatible /v1/chat/completions
-        try {
-            const payload = {
-                model,
-                messages: messages || [{ role: 'user', content: prompt }],
-                stream: false
-            };
-            const resp = await fetch(`${baseUrl}/v1/chat/completions`, {
-                method: 'POST',
-                headers: ollamaHeaders,
-                body: JSON.stringify(payload),
-                signal: AbortSignal.timeout(60000)
-            });
-            if (resp.ok) {
-                const data = await resp.json();
-                return data.choices?.[0]?.message?.content || '';
-            }
-        } catch (e) {}
 
-        // 2. Native Ollama /api/chat
-        try {
-            const resp = await fetch(`${baseUrl}/api/chat`, {
-                method: 'POST',
-                headers: ollamaHeaders,
-                body: JSON.stringify({
-                    model,
-                    messages: messages || [{ role: 'user', content: prompt }],
-                    stream: false
-                }),
-                signal: AbortSignal.timeout(60000)
-            });
-            if (resp.ok) {
-                const data = await resp.json();
-                return data.message?.content || '';
-            }
-        } catch (e) {}
-
-        // 3. Native Ollama /api/generate
-        try {
-            const resp = await fetch(`${baseUrl}/api/generate`, {
-                method: 'POST',
-                headers: ollamaHeaders,
-                body: JSON.stringify({
-                    model,
-                    prompt: typeof prompt === 'string' ? prompt : (messages?.[messages.length-1]?.content || ''),
-                    stream: false
-                }),
-                signal: AbortSignal.timeout(60000)
-            });
-            if (resp.ok) {
-                const data = await resp.json();
-                return data.response || '';
-            }
-            const errText = await resp.text();
-            throw new Error(`Ollama error (${resp.status}): ${errText}`);
-        } catch (err) {
-            throw new Error(`Ollama connection error at ${baseUrl}: ${err.message}`);
+        const endpoints = [];
+        if (raw.endsWith('/api/chat')) {
+            endpoints.push({ url: raw, type: 'chat' });
+        } else if (raw.endsWith('/v1/chat/completions')) {
+            endpoints.push({ url: raw, type: 'openai' });
+        } else if (raw.endsWith('/api/generate')) {
+            endpoints.push({ url: raw, type: 'generate' });
         }
+        
+        endpoints.push({ url: `${baseHost}/api/chat`, type: 'chat' });
+        endpoints.push({ url: `${baseHost}/v1/chat/completions`, type: 'openai' });
+        endpoints.push({ url: `${baseHost}/api/generate`, type: 'generate' });
+
+        let lastErr = null;
+        for (const ep of endpoints) {
+            try {
+                let payload;
+                if (ep.type === 'chat' || ep.type === 'openai') {
+                    payload = {
+                        model,
+                        messages: messages || [{ role: 'user', content: prompt }],
+                        stream: false
+                    };
+                } else {
+                    payload = {
+                        model,
+                        prompt: typeof prompt === 'string' ? prompt : (messages?.[messages.length - 1]?.content || ''),
+                        stream: false
+                    };
+                }
+
+                const resp = await fetch(ep.url, {
+                    method: 'POST',
+                    headers: ollamaHeaders,
+                    body: JSON.stringify(payload),
+                    signal: AbortSignal.timeout(90000)
+                });
+
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (ep.type === 'chat') {
+                        return data.message?.content || data.response || '';
+                    } else if (ep.type === 'openai') {
+                        return data.choices?.[0]?.message?.content || '';
+                    } else {
+                        return data.response || '';
+                    }
+                }
+
+                const errBody = await resp.text();
+                lastErr = `HTTP ${resp.status} from ${ep.url}: ${errBody}`;
+                if (resp.status === 404 && (errBody.includes('not found') || errBody.includes('404'))) {
+                    continue;
+                }
+                throw new Error(lastErr);
+            } catch (err) {
+                if (err.message && (err.message.includes('401') || err.message.includes('403') || err.message.includes('model') || err.message.includes('ollama.com'))) {
+                    throw err;
+                }
+                lastErr = err.message;
+            }
+        }
+
+        throw new Error(`Ollama connection error at ${baseHost}: ${lastErr || 'Endpoint unreachable'}. Ensure model '${model}' is pulled ('ollama pull ${model}').`);
     }
 
     if (provider === 'anthropic') {
@@ -868,7 +903,12 @@ async function executeChatCompletion({ provider, baseUrl, apiKey, model, prompt,
         headers['X-Title'] = 'VisionX';
     }
 
-    const resp = await fetch(`${baseUrl}/chat/completions`, {
+    let chatUrl = (baseUrl || 'https://api.openai.com/v1').trim().replace(/\/+$/, '');
+    if (!chatUrl.endsWith('/chat/completions')) {
+        chatUrl = `${chatUrl}/chat/completions`;
+    }
+
+    const resp = await fetch(chatUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify({

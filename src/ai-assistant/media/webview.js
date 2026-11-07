@@ -26,7 +26,6 @@ const popProvider = document.getElementById('pop-provider');
 const popBaseUrl = document.getElementById('pop-base-url');
 const popApiKey = document.getElementById('pop-api-key');
 const popModel = document.getElementById('pop-model');
-const popCustomModel = document.getElementById('pop-custom-model');
 const popStatus = document.getElementById('pop-status');
 const popScanBtn = document.getElementById('pop-scan-btn');
 const popSaveBtn = document.getElementById('pop-save-btn');
@@ -96,10 +95,10 @@ window.addEventListener('message', event => {
     popProvider.value = prov;
     popBaseUrl.value = currentSettings.baseUrl || PROVIDER_DEFAULTS[prov]?.url || '';
     popApiKey.value = currentSettings.apiKey || '';
-    popCustomModel.value = currentSettings.customModel || '';
+    popModel.value = currentSettings.model || currentSettings.customModel || PROVIDER_DEFAULTS[prov]?.defaultModel || '';
 
     if (currentSettings.discoveredModels && currentSettings.discoveredModels.length > 0) {
-      populateModelDropdown(currentSettings.discoveredModels, currentSettings.model);
+      populateModelSuggestions(currentSettings.discoveredModels);
     } else if (currentSettings.apiKey || prov === 'ollama' || prov === 'ollama_cloud' || prov === 'lmstudio') {
       detectModels();
     }
@@ -121,14 +120,17 @@ window.addEventListener('message', event => {
   } else if (msg.type === 'modelsDiscovered') {
     if (msg.success && Array.isArray(msg.models) && msg.models.length > 0) {
       currentSettings.discoveredModels = msg.models;
-      if (!currentSettings.model || !msg.models.includes(currentSettings.model)) {
+      populateModelSuggestions(msg.models);
+      if (!popModel.value) {
+        popModel.value = msg.models[0];
         currentSettings.model = msg.models[0];
       }
-      populateModelDropdown(msg.models, currentSettings.model);
       updatePill();
-      popStatus.textContent = msg.models.length + ' models recognized successfully.';
+      popStatus.style.color = '#4ade80';
+      popStatus.textContent = msg.models.length + ' models discovered from ' + popProvider.value.toUpperCase() + '.';
     } else {
-      popStatus.textContent = msg.error ? ('Status: ' + msg.error) : 'No models discovered. You can enter an override below.';
+      popStatus.style.color = '#f87171';
+      popStatus.textContent = msg.error ? ('Connection failed: ' + msg.error) : 'No models discovered from endpoint.';
     }
   } else if (msg.type === 'chatResponse') {
     const aiEl = pendingRequests.get(msg.reqId);
@@ -280,14 +282,19 @@ popProvider.onchange = () => {
   const prov = popProvider.value;
   if (prov === 'ollama') {
     popBaseUrl.value = 'http://localhost:11434';
+    popModel.value = 'llama3.3';
   } else if (prov === 'ollama_cloud') {
     if (!popBaseUrl.value || popBaseUrl.value === 'http://localhost:11434') {
       popBaseUrl.value = '';
     }
-    popBaseUrl.placeholder = 'https://your-remote-ollama-instance.com';
+    popBaseUrl.placeholder = 'http://your-remote-host:11434';
+    popModel.value = 'llama3.3';
   } else if (PROVIDER_DEFAULTS[prov]) {
     popBaseUrl.value = PROVIDER_DEFAULTS[prov].url;
+    popModel.value = PROVIDER_DEFAULTS[prov].defaultModel;
   }
+  popStatus.style.color = '#94a3b8';
+  popStatus.textContent = 'Configure credentials for ' + prov.toUpperCase() + '.';
   detectModels();
 };
 
@@ -324,15 +331,15 @@ popSaveBtn.onclick = () => {
   currentSettings.provider = popProvider.value;
   currentSettings.baseUrl = popBaseUrl.value.trim() || PROVIDER_DEFAULTS[currentSettings.provider]?.url || '';
   currentSettings.apiKey = popApiKey.value.trim();
-  currentSettings.model = popModel.value || currentSettings.model;
-  currentSettings.customModel = popCustomModel.value.trim();
+  currentSettings.model = popModel.value.trim() || PROVIDER_DEFAULTS[currentSettings.provider]?.defaultModel || 'llama3.3';
+  currentSettings.customModel = currentSettings.model;
   updatePill();
   vscode.postMessage({ type: 'saveSettings', settings: currentSettings });
   modelPopover.style.display = 'none';
 };
 
 function updatePill() {
-  const active = currentSettings.customModel || currentSettings.model || 'VisionX Fusion | Standard';
+  const active = currentSettings.model || 'VisionX AI';
   const name = active.split('/').pop().replace(/-20\d\d\d\d\d\d/g, '');
   modelPillText.textContent = name;
 }
@@ -342,6 +349,7 @@ function detectModels() {
   const baseUrl = (popBaseUrl.value.trim() || PROVIDER_DEFAULTS[provider]?.url || '').replace(/\/+$/, '');
   const apiKey = popApiKey.value.trim();
 
+  popStatus.style.color = '#94a3b8';
   popStatus.textContent = 'Scanning models from ' + provider.toUpperCase() + '...';
 
   // Request models from Node extension backend (100% bypasses browser webview CORS!)
@@ -353,14 +361,14 @@ function detectModels() {
   });
 }
 
-function populateModelDropdown(models, selected) {
-  popModel.innerHTML = '';
+function populateModelSuggestions(models) {
+  const datalist = document.getElementById('model-suggestions');
+  if (!datalist) return;
+  datalist.innerHTML = '';
   for (const m of models) {
     const opt = document.createElement('option');
     opt.value = m;
-    opt.textContent = m;
-    if (m === selected) opt.selected = true;
-    popModel.appendChild(opt);
+    datalist.appendChild(opt);
   }
 }
 

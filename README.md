@@ -6,7 +6,7 @@
 ### Autonomous AI and Spatial Developer Workspace
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://opensource.org/licenses/MIT)
-[![Release: v1.6.4](https://img.shields.io/badge/Release-v1.6.4-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.6.4)
+[![Release: v1.6.5](https://img.shields.io/badge/Release-v1.6.5-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.6.5)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-red.svg)]()
 [![Aesthetics](https://img.shields.io/badge/Aesthetics-Liquid%20Glass-ff5500.svg)]()
 [![AI Engine](https://img.shields.io/badge/AI%20Core-BYOK%20Dynamic%20Discovery-ffd700.svg)]()
@@ -15,6 +15,15 @@
 VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a sleek liquid glass dark obsidian aesthetic, native Bring-Your-Own-Key (BYOK) dynamic AI model discovery, an interactive 360-degree orbital 3D project architecture graph in the bottom panel, macOS-style traffic light window controls, and seamless automatic migration of all VS Code extensions and settings.
 
 </div>
+
+---
+
+## What is New in v1.6.5
+
+- Unified Single Model Input in BYOK Settings: Eliminated the confusing duplicate model fields ("Active Recognized Model" dropdown and "Custom Model Override"). Replaced them with a single, direct Model Name field supporting live auto-completion datalist suggestions from scanned endpoints as well as direct text entry.
+- Fixed Ollama URL Resolution and Endpoint Normalization: Resolved the double-appended `/api/chat/api/generate` 404 errors by adding intelligent endpoint resolution. Correctly routes to `/api/chat`, `/v1/chat/completions`, or `/api/generate` without URL doubling.
+- Transparent Error Reporting: Purged deceptive default fallback models when an endpoint connection fails. Real HTTP error messages (e.g. 404, 401, connection refused) are now shown immediately with diagnostic guidance.
+- Host Validation Guidance: Added helpful validation alerting users that `ollama.com` is a web portal, not an API server, guiding users to local `http://localhost:11434` or their private remote host IP.
 
 ---
 
@@ -105,7 +114,7 @@ VisionX is a high-velocity code editor and developer workspace built on an open-
 ## Installation and Quick Start
 
 ### Standalone Release (Windows x64)
-1. Download the latest release archive (`VisionX-Windows-x64-v1.6.4.zip`) from the Releases section.
+1. Download the latest release archive (`VisionX-Windows-x64-v1.6.5.zip`) from the Releases section.
 2. Extract the archive to any desired directory (e.g., `C:\VisionX` or `%LOCALAPPDATA%\Programs\VisionX`).
 3. Run `VisionX.exe`.
 

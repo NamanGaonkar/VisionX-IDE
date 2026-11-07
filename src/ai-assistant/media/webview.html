@@ -514,17 +514,11 @@
 
       <div class="popover-row">
         <div class="popover-row-inline">
-          <label>Active Recognized Model</label>
-          <button type="button" class="scan-btn" id="pop-scan-btn">Scan Models</button>
+          <label>Model Name</label>
+          <button type="button" class="scan-btn" id="pop-scan-btn" title="Discover available models from this endpoint">Scan Models</button>
         </div>
-        <select id="pop-model">
-          <option value="">Paste API key or click Scan Models</option>
-        </select>
-      </div>
-
-      <div class="popover-row">
-        <label>Custom Model Override (Optional)</label>
-        <input type="text" id="pop-custom-model" placeholder="e.g. llama3.3 or anthropic/claude-3.7-sonnet">
+        <input type="text" id="pop-model" list="model-suggestions" placeholder="e.g. llama3.3, gpt-4o, claude-3-7-sonnet">
+        <datalist id="model-suggestions"></datalist>
       </div>
 
       <div class="popover-status" id="pop-status">Select provider and configure credentials.</div>

@@ -17,7 +17,7 @@ ICON_PATH = BUILD_DIR / "icons" / "visionx.ico"
 LOGO_SVG_PATH = BASE_DIR / "src" / "branding" / "visionx-logo.svg"
 
 print("==================================================")
-print("     VisionX IDE v1.6.4 - Engine Rebuild & Polish ")
+print("     VisionX IDE v1.6.5 - Engine Rebuild & Polish ")
 print("==================================================")
 
 # 1. Clean and extract
@@ -875,8 +875,8 @@ try:
         "--set-version-string", "LegalCopyright", "Copyright (C) 2026 VisionX Contributors",
         "--set-version-string", "InternalName", "VisionX",
         "--set-version-string", "OriginalFilename", "VisionX.exe",
-        "--set-file-version", "1.6.4.0",
-        "--set-product-version", "1.6.4.0"
+        "--set-file-version", "1.6.5.0",
+        "--set-product-version", "1.6.5.0"
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode == 0:
@@ -887,5 +887,5 @@ except Exception as e:
     print("Could not run rcedit:", e)
 
 print("==================================================")
-print(" VisionX IDE v1.6.4 build completed successfully! ")
+print(" VisionX IDE v1.6.5 build completed successfully! ")
 print("==================================================")
