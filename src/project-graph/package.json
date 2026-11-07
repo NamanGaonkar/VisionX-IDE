@@ -1,0 +1,56 @@
+{
+  "name": "visionx-project-graph",
+  "displayName": "VisionX 3D Project Architecture Graph",
+  "description": "Interactive 3D Project Architecture and Dependency Graph for VisionX IDE",
+  "version": "1.7.0",
+  "publisher": "VisionX",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "main": "./extension.js",
+  "categories": [
+    "Visualization",
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onView:visionx.graphView",
+    "onCommand:visionx.openProjectGraph",
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "visionx-graph-panel",
+          "title": "Project Architecture Graph",
+          "icon": "media/graph-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "visionx-graph-panel": [
+        {
+          "type": "webview",
+          "id": "visionx.graphView",
+          "name": "3D Project Architecture Graph"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "visionx.openProjectGraph",
+        "title": "VisionX: Open 3D Project Architecture Graph",
+        "category": "VisionX",
+        "icon": "$(type-hierarchy)"
+      }
+    ],
+    "menus": {
+      "commandCenter": [
+        {
+          "command": "visionx.openProjectGraph",
+          "group": "navigation@101"
+        }
+      ]
+    }
+  }
+}

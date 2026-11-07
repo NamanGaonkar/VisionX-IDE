@@ -17,7 +17,7 @@ ICON_PATH = BUILD_DIR / "icons" / "visionx.ico"
 LOGO_SVG_PATH = BASE_DIR / "src" / "branding" / "visionx-logo.svg"
 
 print("==================================================")
-print("     VisionX IDE v1.6.5 - Engine Rebuild & Polish ")
+print("     VisionX IDE v1.7.0 - Built-in Cline Agentic Chat ")
 print("==================================================")
 
 # 1. Clean and extract
@@ -85,18 +85,42 @@ if product_json_path.exists():
         product["configurationDefaults"] = {}
     product["configurationDefaults"]["workbench.colorTheme"] = "VisionX Liquid Glass"
     product["configurationDefaults"]["telemetry.telemetryLevel"] = "off"
+    product["configurationDefaults"]["telemetry.enableCrashReporter"] = False
+    product["configurationDefaults"]["telemetry.enableTelemetry"] = False
+    product["configurationDefaults"]["claude-dev.telemetry"] = False
     product["configurationDefaults"]["workbench.startupEditor"] = "welcomePage"
     product["configurationDefaults"]["window.titleBarStyle"] = "custom"
     product["configurationDefaults"]["window.menuBarVisibility"] = "classic"
     product["configurationDefaults"]["window.commandCenter"] = True
     product["configurationDefaults"]["workbench.layoutControl.enabled"] = True
+    product["configurationDefaults"]["workbench.layoutControl.type"] = "both"
+    product["configurationDefaults"]["workbench.secondarySideBar.defaultVisibility"] = "visible"
     product["configurationDefaults"]["chat.agent.enabled"] = False
     product["configurationDefaults"]["chat.tips.enabled"] = False
     product["configurationDefaults"]["chat.agent.tips.enabled"] = False
 
+    if "builtInExtensions" not in product or not isinstance(product["builtInExtensions"], list):
+        product["builtInExtensions"] = []
+    
+    # Register Cline and VisionX Project Graph as built-in extensions
+    product["builtInExtensions"].append({
+        "name": "saoudrizwan.claude-dev",
+        "version": "4.1.26",
+        "repo": "https://github.com/cline/cline"
+    })
+    product["builtInExtensions"].append({
+        "name": "visionx.visionx-project-graph",
+        "version": "1.7.0",
+        "repo": "https://github.com/NamanGaonkar/VisionX-IDE"
+    })
+
+    if "credits" not in product:
+        product["credits"] = {}
+    product["credits"]["cline"] = "VisionX incorporates Cline (Apache-2.0, Copyright (c) 2024 Saoud Rizwan and contributors) as the built-in default agentic chat."
+
     with open(product_json_path, "w", encoding="utf-8") as f:
         json.dump(product, f, indent=2)
-    print("product.json updated successfully.")
+    print("product.json updated successfully with Cline defaults and builtInExtensions.")
 
 # 4. Patch resources/app/package.json
 pkg_json_path = VISIONX_DIST / "resources" / "app" / "package.json"
@@ -145,7 +169,7 @@ if LOGO_SVG_PATH.exists():
                     pass
     print(f"Replaced {replaced_count} legacy SVGs with VisionX glowing SVG logo.")
 
-# 7. Inject custom extensions (Theme & AI Assistant)
+# 7. Inject custom extensions (Theme, Project Graph, & Cline Default Agentic Chat)
 ext_dir = VISIONX_DIST / "resources" / "app" / "extensions"
 if ext_dir.exists():
     print("Installing built-in VisionX Liquid Glass Theme...")
@@ -154,11 +178,96 @@ if ext_dir.exists():
         shutil.rmtree(target_theme)
     shutil.copytree(BASE_DIR / "src" / "theme", target_theme)
 
-    print("Installing built-in VisionX AI Core Extension...")
-    target_ai = ext_dir / "visionx-ai-core"
-    if target_ai.exists():
-        shutil.rmtree(target_ai)
-    shutil.copytree(BASE_DIR / "src" / "ai-assistant", target_ai)
+    print("Installing built-in VisionX 3D Project Architecture Graph...")
+    target_graph = ext_dir / "visionx-project-graph"
+    if target_graph.exists():
+        shutil.rmtree(target_graph)
+    shutil.copytree(BASE_DIR / "src" / "project-graph", target_graph)
+
+    print("Bundling Cline (Apache 2.0) as default built-in agentic chat...")
+    target_cline = ext_dir / "claude-dev"
+    if target_cline.exists():
+        shutil.rmtree(target_cline)
+    target_cline.mkdir(parents=True, exist_ok=True)
+
+    cline_vsix = BUILD_DIR / "extensions" / "saoudrizwan.claude-dev-4.1.26.vsix"
+    if cline_vsix.exists():
+        with zipfile.ZipFile(cline_vsix, "r") as z:
+            for member in z.infolist():
+                if member.filename.startswith("extension/"):
+                    rel_path = member.filename[len("extension/"):]
+                    if not rel_path:
+                        continue
+                    out_path = target_cline / rel_path
+                    if member.is_dir():
+                        out_path.mkdir(parents=True, exist_ok=True)
+                    else:
+                        out_path.parent.mkdir(parents=True, exist_ok=True)
+                        out_path.write_bytes(z.read(member.filename))
+        print("Extracted Cline extension files.")
+
+    # Keep Apache license and NOTICE in packaged build
+    cline_license = target_cline / "LICENSE.txt"
+    if cline_license.exists():
+        shutil.copy(cline_license, VISIONX_DIST / "CLINE_LICENSE.txt")
+        shutil.copy(cline_license, VISIONX_DIST / "resources" / "app" / "CLINE_LICENSE.txt")
+
+    # Configure Cline package.json for secondary sidebar, command center chat button, and Ctrl+Alt+I shortcut
+    cline_pkg_path = target_cline / "package.json"
+    if cline_pkg_path.exists():
+        with open(cline_pkg_path, "r", encoding="utf-8") as f:
+            cline_pkg = json.load(f)
+
+        cline_pkg["displayName"] = "VisionX Chat (Cline)"
+        cline_pkg["description"] = "Autonomous AI coding agent built into VisionX IDE"
+
+        # 1. Place chat container in secondarySidebar (right sidebar) by default
+        cline_pkg["contributes"]["viewsContainers"] = {
+            "secondarySidebar": [
+                {
+                    "id": "claude-dev-ActivityBar",
+                    "title": "Chat",
+                    "icon": "assets/icons/icon.svg"
+                }
+            ]
+        }
+
+        # 2. Add Chat button to commandCenter (in titlebar next to search)
+        menus = cline_pkg.get("contributes", {}).get("menus", {})
+        if "commandCenter" not in menus:
+            menus["commandCenter"] = []
+        menus["commandCenter"].insert(0, {
+            "command": "claude-dev.SidebarProvider.focus",
+            "group": "navigation@100"
+        })
+        cline_pkg["contributes"]["menus"] = menus
+
+        # 3. Add keyboard shortcut Ctrl+Alt+I (mac: cmd+alt+i) to focus chat
+        keybindings = cline_pkg.get("contributes", {}).get("keybindings", [])
+        keybindings.insert(0, {
+            "command": "claude-dev.SidebarProvider.focus",
+            "key": "ctrl+alt+i",
+            "mac": "cmd+alt+i",
+            "win": "ctrl+alt+i",
+            "linux": "ctrl+alt+i"
+        })
+        cline_pkg["contributes"]["keybindings"] = keybindings
+
+        with open(cline_pkg_path, "w", encoding="utf-8") as f:
+            json.dump(cline_pkg, f, indent=2)
+        print("Configured Cline package.json for secondary sidebar and Ctrl+Alt+I.")
+
+    # Neutralize telemetry in Cline
+    cline_ext_js = target_cline / "dist" / "extension.js"
+    if cline_ext_js.exists():
+        code = cline_ext_js.read_text(encoding="utf-8", errors="ignore")
+        old_is_enabled = 'isEnabled(){let e=no.get().getGlobalSettingsKey("telemetrySetting")!=="disabled"'
+        new_is_enabled = 'isEnabled(){return false;let e="disabled"'
+        if old_is_enabled in code:
+            code = code.replace(old_is_enabled, new_is_enabled)
+            print("Neutralized PostHog telemetry in Cline extension.js")
+        code = code.replace('telemetrySetting:void 0', 'telemetrySetting:"disabled"')
+        cline_ext_js.write_text(code, encoding="utf-8")
 
 # 8. macOS-Style Traffic Light Window Controls CSS matching uploaded image
 traffic_light_css = f"""
@@ -895,8 +1004,8 @@ try:
         "--set-version-string", "LegalCopyright", "Copyright (C) 2026 VisionX Contributors",
         "--set-version-string", "InternalName", "VisionX",
         "--set-version-string", "OriginalFilename", "VisionX.exe",
-        "--set-file-version", "1.6.6.0",
-        "--set-product-version", "1.6.6.0"
+        "--set-file-version", "1.7.0.0",
+        "--set-product-version", "1.7.0.0"
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode == 0:
@@ -907,5 +1016,5 @@ except Exception as e:
     print("Could not run rcedit:", e)
 
 print("==================================================")
-print(" VisionX IDE v1.6.5 build completed successfully! ")
+print(" VisionX IDE v1.7.0 build completed successfully! ")
 print("==================================================")

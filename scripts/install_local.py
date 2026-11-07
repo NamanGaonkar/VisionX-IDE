@@ -14,7 +14,7 @@ EXE_PATH = INSTALL_DIR / "VisionX.exe"
 BIN_PATH = INSTALL_DIR / "bin"
 
 print("==================================================")
-print("     VisionX IDE v1.6.6 - Local Windows Re-installer ")
+print("     VisionX IDE v1.7.0 - Local Windows Re-installer ")
 print("==================================================")
 
 if not DIST_DIR.exists():
@@ -35,7 +35,7 @@ if INSTALL_DIR.exists():
         print(f"Note during cleanup: {e}")
 
 INSTALL_DIR.mkdir(parents=True, exist_ok=True)
-print("Copying fresh VisionX v1.6.6 binaries...")
+print("Copying fresh VisionX v1.7.0 binaries...")
 shutil.copytree(DIST_DIR, INSTALL_DIR, dirs_exist_ok=True)
 print("Binaries copied successfully.")
 
@@ -151,5 +151,5 @@ if vscode_ext.exists():
     print(f"Migrated and linked {linked_exts} extensions across VisionX target directories.")
 
 print("==================================================")
-print(" VisionX IDE v1.6.6 Installed Locally!            ")
+print(" VisionX IDE v1.7.0 Installed Locally!            ")
 print("==================================================")

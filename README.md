@@ -6,19 +6,29 @@
 ### Autonomous AI and Spatial Developer Workspace
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://opensource.org/licenses/MIT)
-[![Release: v1.6.6](https://img.shields.io/badge/Release-v1.6.6-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.6.6)
+[![Release: v1.7.0](https://img.shields.io/badge/Release-v1.7.0-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.7.0)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-red.svg)]()
 [![Aesthetics](https://img.shields.io/badge/Aesthetics-Liquid%20Glass-ff5500.svg)]()
-[![AI Engine](https://img.shields.io/badge/AI%20Core-BYOK%20Dynamic%20Discovery-ffd700.svg)]()
+[![AI Engine](https://img.shields.io/badge/AI%20Core-Cline%20Autonomous%20Agent-ffd700.svg)]()
 [![Extensions](https://img.shields.io/badge/Extensions-Open%20VSX-blue.svg)](https://open-vsx.org/)
 
-VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a sleek liquid glass dark obsidian aesthetic, native Bring-Your-Own-Key (BYOK) dynamic AI model discovery, an interactive 360-degree orbital 3D project architecture graph in the bottom panel, macOS-style traffic light window controls, and seamless automatic migration of all VS Code extensions and settings.
+VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a sleek liquid glass dark obsidian aesthetic, Cline as the built-in default autonomous coding agent (file editing, terminal execution, diffs, tool calling, multi-model BYOK, and local Ollama support), an interactive 360-degree orbital 3D project architecture graph in the bottom panel, macOS-style traffic light window controls, and seamless automatic migration of all VS Code extensions and settings.
 
 </div>
 
 ---
 
-## What is New in v1.6.6
+## What is New in v1.7.0
+
+- Built-in Cline Agentic Chat: Fully replaced the earlier custom chat with Cline (Apache 2.0, version 4.1.26) as the built-in default agentic chat, mirroring GitHub Copilot Chat's integration in VS Code without requiring manual user installation.
+- Copilot-Style Secondary Sidebar Placement: Pinned Cline to the secondary (right) sidebar container titled "Chat", automatically opened on initial launch.
+- Dedicated Title Bar & Command Center Button: Accessible with one click directly from the Command Center navigation toolbar in the title bar.
+- Global Keyboard Shortcut: Focused instantly via `Ctrl+Alt+I` (`Cmd+Alt+I` on macOS).
+- Full Autonomous Agent Capabilities: Terminal command execution with approval guards, multi-file inspection and editing, live diff reviews, browser automation, MCP (Model Context Protocol) tool integration, and plan/act modes.
+- Universal BYOK and Local Ollama Architecture: Native support for all top providers (Anthropic, OpenRouter, OpenAI, Google Gemini, AWS Bedrock, Mistral, DeepSeek) and local Ollama (`http://localhost:11434`) with zero account sign-in required and zero personal keys bundled.
+- Complete Telemetry Neutralization: All PostHog and Langfuse telemetry streams in Cline and VisionX are disabled by default (`telemetry.telemetryLevel: off`, `telemetrySetting: disabled`).
+- Standalone 3D Architecture Graph Extension: Decoupled the 3D Project Architecture Graph into its own dedicated built-in extension (`visionx-project-graph`) in the bottom panel bar with full cross-file dependency scanning and camera controls.
+- Complete Old Chat Purge: Completely deleted all obsolete custom chat webviews, scripts, commands, and providers, leaving zero dead code or broken bindings.
 
 - Native GitHub Copilot & VS Code Language Model API Detection: Added direct integration with VS Code's native `vscode.lm` language model architecture. Automatically discovers and communicates with GitHub Copilot Chat models and registered language model providers without manual API configuration.
 - Real Model Detection with Intelligent Filtering: Completely purged deceptive hardcoded fallback model lists. Provider scanning now queries actual endpoints and applies strict conversational filtering to strip out embeddings, audio/whisper/tts, moderation, and image models, presenting only verified chat and code generation models.
