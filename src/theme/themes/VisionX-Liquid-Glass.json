@@ -6,7 +6,7 @@
     "foreground": "#e2e8f0",
     "descriptionForeground": "#94a3b8",
     "errorForeground": "#ff3366",
-    "widget.shadow": "#000000bb",
+    "widget.shadow": "#000000cc",
     "selection.background": "#ff550044",
 
     "window.activeBorder": "#ff550044",
@@ -45,7 +45,7 @@
     "tab.border": "#13172440",
     "tab.hoverBackground": "#151a2a",
 
-    "editor.background": "#0c0f18",
+    "editor.background": "#080b11",
     "editor.foreground": "#f1f5f9",
     "editorLineNumber.foreground": "#334155",
     "editorLineNumber.activeForeground": "#ff8800",
@@ -68,7 +68,7 @@
     "editorBracketMatch.border": "#ff8800",
 
     "editorOverviewRuler.border": "#00000000",
-    "editorGutter.background": "#0c0f18",
+    "editorGutter.background": "#080b11",
     "editorGutter.modifiedBackground": "#ffaa00",
     "editorGutter.addedBackground": "#00f0a8",
     "editorGutter.deletedBackground": "#ff3366",
@@ -170,52 +170,52 @@
       "name": "Keywords",
       "scope": ["keyword", "storage.type", "storage.modifier"],
       "settings": {
-        "foreground": "#ff4d6d",
+        "foreground": "#ff2a85",
         "fontStyle": "bold"
       }
     },
     {
       "name": "Control Flow Keywords",
-      "scope": ["keyword.control"],
+      "scope": ["keyword.control", "keyword.control.import", "keyword.control.export", "keyword.control.from", "keyword.control.default"],
       "settings": {
-        "foreground": "#ff385c",
+        "foreground": "#ff2a85",
         "fontStyle": "bold"
       }
     },
     {
       "name": "Functions & Methods",
-      "scope": ["entity.name.function", "support.function", "meta.function-call"],
+      "scope": ["entity.name.function", "support.function", "meta.function-call", "entity.name.function.member"],
       "settings": {
-        "foreground": "#ffb703"
+        "foreground": "#00e5ff"
       }
     },
     {
-      "name": "Strings",
-      "scope": ["string", "string.quoted", "punctuation.definition.string"],
+      "name": "Strings & Template Literals",
+      "scope": ["string", "string.quoted", "punctuation.definition.string", "string.template"],
       "settings": {
-        "foreground": "#00f0a8"
+        "foreground": "#ffd166"
       }
     },
     {
       "name": "Types, Classes & Interfaces",
-      "scope": ["entity.name.type", "entity.name.class", "support.class", "support.type"],
+      "scope": ["entity.name.type", "entity.name.class", "support.class", "support.type", "entity.other.inherited-class"],
       "settings": {
-        "foreground": "#38bdf8",
+        "foreground": "#00f5d4",
         "fontStyle": "bold"
       }
     },
     {
-      "name": "Variables",
-      "scope": ["variable", "variable.other"],
+      "name": "Variables & Parameters",
+      "scope": ["variable", "variable.other", "variable.parameter", "meta.definition.variable"],
       "settings": {
         "foreground": "#f1f5f9"
       }
     },
     {
       "name": "Constants & Numbers",
-      "scope": ["constant", "constant.numeric", "constant.language"],
+      "scope": ["constant", "constant.numeric", "constant.language", "constant.character"],
       "settings": {
-        "foreground": "#f72585",
+        "foreground": "#ff5588",
         "fontStyle": "bold"
       }
     },
@@ -223,7 +223,7 @@
       "name": "Tags & JSX Elements",
       "scope": ["entity.name.tag", "punctuation.definition.tag"],
       "settings": {
-        "foreground": "#ff5500",
+        "foreground": "#ff6600",
         "fontStyle": "bold"
       }
     },
@@ -231,14 +231,14 @@
       "name": "Attributes",
       "scope": ["entity.other.attribute-name"],
       "settings": {
-        "foreground": "#ffd700"
+        "foreground": "#facc15"
       }
     },
     {
       "name": "Operators",
       "scope": ["keyword.operator"],
       "settings": {
-        "foreground": "#00f5d4"
+        "foreground": "#38bdf8"
       }
     }
   ]

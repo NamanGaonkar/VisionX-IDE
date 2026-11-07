@@ -17,7 +17,7 @@ ICON_PATH = BUILD_DIR / "icons" / "visionx.ico"
 LOGO_SVG_PATH = BASE_DIR / "src" / "branding" / "visionx-logo.svg"
 
 print("==================================================")
-print("     VisionX IDE v1.6.1 - Engine Rebuild & Polish ")
+print("     VisionX IDE v1.6.2 - Engine Rebuild & Polish ")
 print("==================================================")
 
 # 1. Clean and extract
@@ -91,6 +91,8 @@ if product_json_path.exists():
     product["configurationDefaults"]["window.commandCenter"] = True
     product["configurationDefaults"]["workbench.layoutControl.enabled"] = True
     product["configurationDefaults"]["chat.agent.enabled"] = False
+    product["configurationDefaults"]["chat.tips.enabled"] = False
+    product["configurationDefaults"]["chat.agent.tips.enabled"] = False
 
     with open(product_json_path, "w", encoding="utf-8") as f:
         json.dump(product, f, indent=2)
@@ -158,33 +160,36 @@ if ext_dir.exists():
     shutil.copytree(BASE_DIR / "src" / "ai-assistant", target_ai)
 
 # 8. macOS-Style Traffic Light Window Controls CSS matching uploaded image
-traffic_light_css = """
+traffic_light_css = f"""
 /* ======================================================== */
 /* macOS-Style Traffic Light Window Controls                */
 /* Red (Close) -> Yellow (Minimize) -> Green (Maximize)     */
 /* Strictly matching user reference: pure circles, no icons */
 /* ======================================================== */
-.window-controls-container,
+.monaco-workbench.windows:not(.web) .part.titlebar .window-controls-container,
+.monaco-workbench.windows:not(.web) .part.titlebar .titlebar-container .window-controls-container,
 .monaco-workbench .part.titlebar .window-controls-container,
-.monaco-workbench .titlebar-right .window-controls-container {
+.monaco-workbench .window-controls-container,
+.window-controls-container {{
   display: flex !important;
   flex-direction: row !important;
   align-items: center !important;
-  justify-content: flex-end !important;
+  justify-content: center !important;
   gap: 8px !important;
-  padding: 0 16px !important;
+  padding: 0 14px !important;
   width: auto !important;
   min-width: 76px !important;
+  max-width: 90px !important;
   height: 100% !important;
   -webkit-app-region: no-drag !important;
-}
+}}
 
-.window-controls-container > .window-icon,
+.monaco-workbench.windows:not(.web) .part.titlebar .window-controls-container > .window-icon,
 .monaco-workbench .part.titlebar .window-controls-container > .window-icon,
-.monaco-workbench .titlebar-right .window-controls-container > .window-icon,
+.monaco-workbench .window-controls-container > .window-icon,
 .window-icon.window-minimize,
 .window-icon.window-max-restore,
-.window-icon.window-close {
+.window-icon.window-close {{
   width: 12px !important;
   height: 12px !important;
   min-width: 12px !important;
@@ -202,125 +207,93 @@ traffic_light_css = """
   box-sizing: border-box !important;
   -webkit-app-region: no-drag !important;
   transition: transform 0.15s ease, filter 0.15s ease !important;
-}
+  position: relative !important;
+}}
 
 /* Remove any default Windows icons or glyphs inside circles */
-.window-controls-container > .window-icon::before,
-.window-controls-container > .window-icon::after,
 .monaco-workbench .part.titlebar .window-controls-container > .window-icon::before,
 .monaco-workbench .part.titlebar .window-controls-container > .window-icon::after,
-.monaco-workbench .titlebar-right .window-controls-container > .window-icon::before,
-.monaco-workbench .titlebar-right .window-controls-container > .window-icon::after,
 .window-icon.window-minimize::before,
 .window-icon.window-minimize::after,
 .window-icon.window-max-restore::before,
 .window-icon.window-max-restore::after,
 .window-icon.window-close::before,
-.window-icon.window-close::after {
+.window-icon.window-close::after,
+.codicon-chrome-minimize:before,
+.codicon-chrome-maximize:before,
+.codicon-chrome-restore:before,
+.codicon-chrome-close:before {{
   content: "" !important;
   display: none !important;
   opacity: 0 !important;
   width: 0 !important;
   height: 0 !important;
-}
+  font-size: 0px !important;
+  visibility: hidden !important;
+}}
 
 /* Red (Close) */
-.window-controls-container > .window-icon.window-close,
-.window-icon.window-close {
+.monaco-workbench .window-controls-container > .window-icon.window-close,
+.window-icon.window-close {{
   order: 1 !important;
   background-color: #ff5f56 !important;
   border: 1px solid #e0443e !important;
   box-shadow: 0 0 3px rgba(255, 95, 86, 0.4) !important;
-}
-.window-controls-container > .window-icon.window-close:hover,
-.window-icon.window-close:hover {
+}}
+.monaco-workbench .window-controls-container > .window-icon.window-close:hover,
+.window-icon.window-close:hover {{
   background-color: #ff3b30 !important;
   filter: brightness(1.15) !important;
   transform: scale(1.15) !important;
-}
+}}
 
 /* Yellow (Minimize) */
-.window-controls-container > .window-icon.window-minimize,
-.window-icon.window-minimize {
+.monaco-workbench .window-controls-container > .window-icon.window-minimize,
+.window-icon.window-minimize {{
   order: 2 !important;
   background-color: #ffbd2e !important;
   border: 1px solid #dea123 !important;
   box-shadow: 0 0 3px rgba(255, 189, 46, 0.4) !important;
-}
-.window-controls-container > .window-icon.window-minimize:hover,
-.window-icon.window-minimize:hover {
+}}
+.monaco-workbench .window-controls-container > .window-icon.window-minimize:hover,
+.window-icon.window-minimize:hover {{
   background-color: #ffaa00 !important;
   filter: brightness(1.15) !important;
   transform: scale(1.15) !important;
-}
+}}
 
 /* Green (Maximize / Restore) */
-.window-controls-container > .window-icon.window-max-restore,
-.window-icon.window-max-restore {
+.monaco-workbench .window-controls-container > .window-icon.window-max-restore,
+.window-icon.window-max-restore {{
   order: 3 !important;
   background-color: #27c93f !important;
   border: 1px solid #1aab29 !important;
   box-shadow: 0 0 3px rgba(39, 201, 63, 0.4) !important;
-}
-.window-controls-container > .window-icon.window-max-restore:hover,
-.window-icon.window-max-restore:hover {
+}}
+.monaco-workbench .window-controls-container > .window-icon.window-max-restore:hover,
+.window-icon.window-max-restore:hover {{
   background-color: #20b034 !important;
   filter: brightness(1.15) !important;
   transform: scale(1.15) !important;
-}
-"""
-
-agent_branding_css = f"""
-/* ======================================================== */
-/* VisionX Agent Window & Setup Dialog Branding             */
-/* ======================================================== */
-.chat-setup-dialog.sessions-main-welcome-dialog .dialog-message-row > .dialog-icon.codicon,
-.chat-setup-dialog.sessions-welcome-dialog .dialog-message-row > .dialog-icon,
-.chat-setup-dialog .dialog-message-row > .dialog-icon,
-.sessions-welcome-dialog .dialog-icon,
-.sessions-main-welcome-dialog .dialog-icon,
-.sessions-sign-in-dialog .dialog-icon,
-.sessions-sign-in-dialog-message-row > .dialog-icon,
-.monaco-dialog-box .dialog-icon,
-.dialog-icon.codicon-agent {{
-  background-image: url("{logo_b64_url}") !important;
-  background-size: contain !important;
-  background-repeat: no-repeat !important;
-  background-position: center !important;
-  width: 72px !important;
-  height: 72px !important;
-  min-width: 72px !important;
-  min-height: 72px !important;
-  font-size: 0px !important;
-  color: transparent !important;
-  filter: drop-shadow(0 0 12px rgba(255, 120, 0, 0.45)) !important;
 }}
 
-.chat-setup-dialog.sessions-main-welcome-dialog .dialog-message-row > .dialog-icon.codicon::before,
-.chat-setup-dialog.sessions-welcome-dialog .dialog-message-row > .dialog-icon::before,
-.chat-setup-dialog .dialog-message-row > .dialog-icon::before,
-.sessions-welcome-dialog .dialog-icon::before,
-.sessions-main-welcome-dialog .dialog-icon::before,
-.sessions-sign-in-dialog .dialog-icon::before,
-.monaco-dialog-box .dialog-icon::before,
-.dialog-icon.codicon-agent::before {{
+/* Replace titlebar window appicon with glowing VisionX Logo */
+.monaco-workbench .part.titlebar .window-appicon,
+.monaco-workbench .part.titlebar > .titlebar-container > .titlebar-left > .window-appicon,
+.window-appicon {{
+  background-image: url("{logo_b64_url}") !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: 18px !important;
+  width: 35px !important;
+}}
+
+.monaco-workbench .part.titlebar .window-appicon::before,
+.monaco-workbench .part.titlebar .window-appicon::after,
+.window-appicon::before,
+.window-appicon::after,
+.codicon-vscode::before {{
   content: "" !important;
-  display: none !important;
-}}
-
-.monaco-workbench .open-in-vscode-titlebar-widget > .open-in-vscode-titlebar-widget-icon {{
-  background-image: url("{logo_b64_url}") !important;
-  background-size: contain !important;
-  background-repeat: no-repeat !important;
-  background-position: center !important;
-  filter: none !important;
-}}
-
-.monaco-workbench .action-label.codicon-fish1-happy,
-.monaco-workbench .action-label.codicon-fish1-neutral,
-.monaco-workbench .action-label.codicon-fish1-sad,
-.monaco-workbench .action-label.codicon-fish1-very-sad,
-.agents-aquarium-fish-layer {{
   display: none !important;
 }}
 """
@@ -392,11 +365,11 @@ html, body, .monaco-workbench {
 
 /* Editor */
 .monaco-workbench .part.editor {
-  background-color: #07090e !important;
+  background-color: #080b11 !important;
 }
 
 .monaco-workbench .part.editor > .content .editor-group-container {
-  background-color: #07090e !important;
+  background-color: #080b11 !important;
 }
 
 .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container {
@@ -446,7 +419,7 @@ html, body, .monaco-workbench {
   border-radius: 6px !important;
 }
 
-/* Completely eliminate Accounts / Profile Icon */
+/* Completely eliminate Accounts / Profile Icon everywhere */
 .monaco-workbench .part.activitybar .action-item:has(.accounts-view-bar-icon),
 .monaco-workbench .part.activitybar .action-item:has(.codicon-account),
 .monaco-workbench .part.activitybar .action-item[aria-label*="Accounts"],
@@ -455,9 +428,15 @@ html, body, .monaco-workbench {
 .monaco-workbench .part.activitybar .accounts-activity-item,
 .monaco-workbench .part.titlebar [aria-label*="Accounts"],
 .monaco-workbench .part.titlebar [aria-label*="Account"],
+.monaco-workbench .part.titlebar [aria-label*="account"],
+.monaco-workbench .part.titlebar .action-item:has(.codicon-account),
+.monaco-workbench .part.titlebar .action-item:has([aria-label*="Account"]),
+.monaco-workbench .part.titlebar .codicon-account,
 .monaco-workbench .accounts-view-bar-icon,
 .monaco-workbench .codicon-account,
 [id="workbench.actions.manageAccounts"],
+[id*="manageAccounts"],
+
 /* Completely eliminate Agents Window and all associated widgets */
 [id*="openAgentsWindow"],
 [id*="openWorkspaceInAgentsWindow"],
@@ -470,7 +449,24 @@ html, body, .monaco-workbench {
 .chat-setup-dialog,
 .agents-aquarium-fish-layer,
 .action-label.codicon-agent,
-.codicon-agent {
+.codicon-agent,
+
+/* Completely eliminate Migration notices and tip banners */
+.chat-customization-migration-banner,
+[class*="migration-banner"],
+[class*="migrationHint"],
+[class*="migration-notice"],
+.interactive-session-tip,
+.chat-tip-container,
+.chat-tips-widget,
+[aria-label*="customizations need an update"],
+[aria-label*="Review Migrations"],
+
+/* Completely eliminate corruption / tamper notification toasts */
+.monaco-workbench .notifications-toasts .notification-toast:has([aria-label*="corrupt"]),
+.monaco-workbench .notifications-toasts .notification-toast:has([aria-label*="corrupted"]),
+.monaco-workbench .notification-toast:has(.notification-message:has-text("corrupt")),
+[aria-label*="installation appears to be corrupt"] {
   display: none !important;
   visibility: hidden !important;
   width: 0px !important;
@@ -490,67 +486,124 @@ workbench_css = VISIONX_DIST / "resources" / "app" / "out" / "vs" / "workbench" 
 if workbench_css.exists():
     print("Injecting styles into workbench.desktop.main.css...")
     with open(workbench_css, "a", encoding="utf-8") as f:
-        f.write("\n" + glass_css + "\n" + traffic_light_css + "\n" + agent_branding_css)
+        f.write("\n" + glass_css + "\n" + traffic_light_css)
 
 sessions_css = VISIONX_DIST / "resources" / "app" / "out" / "vs" / "sessions" / "sessions.desktop.main.css"
 if sessions_css.exists():
     print("Injecting styles into sessions.desktop.main.css...")
     with open(sessions_css, "a", encoding="utf-8") as f:
-        f.write("\n" + traffic_light_css + "\n" + agent_branding_css)
+        f.write("\n" + glass_css + "\n" + traffic_light_css)
 
-# 8b. Neutralize Agents window and rebrand strings in JS & NLS bundles
-print("Completely eliminating Agents window functionality...")
+# 8b. Neutralize Agents window across electron-browser and electron-main
+print("Completely eliminating Agents window functionality and autostart...")
 app_out = VISIONX_DIST / "resources" / "app" / "out"
+
+# 1. Overwrite sessions.html with an immediate auto-close safeguard
+sessions_html = app_out / "vs" / "sessions" / "electron-browser" / "sessions.html"
+if sessions_html.exists():
+    sessions_html.write_text("<!DOCTYPE html><html><head><title>VisionX</title><script>window.close();</script></head><body></body></html>", encoding="utf-8")
+    print("Replaced sessions.html with immediate window.close() safeguard.")
+
+# 2. Overwrite sessions.js entrypoint
+sessions_entry_js = app_out / "vs" / "sessions" / "electron-browser" / "sessions.js"
+if sessions_entry_js.exists():
+    txt = sessions_entry_js.read_text(encoding="utf-8", errors="ignore")
+    sessions_entry_js.write_text("window.close();\n" + txt, encoding="utf-8")
+    print("Injected auto-close guard into electron-browser/sessions.js")
+
+# 3. Overwrite sessions.desktop.main.js
+sessions_js = app_out / "vs" / "sessions" / "sessions.desktop.main.js"
+if sessions_js.exists():
+    txt = sessions_js.read_text(encoding="utf-8", errors="ignore")
+    sessions_js.write_text("window.close();\n" + txt, encoding="utf-8")
+    print("Injected auto-close guard into sessions.desktop.main.js")
+
+# 4. Patch mainImpl.js
 main_impl = app_out / "mainImpl.js"
 if main_impl.exists():
     try:
         txt = main_impl.read_text(encoding="utf-8", errors="ignore")
+        txt = txt.replace("checksumFailMoreInfoUrl:\"https://go.microsoft.com/fwlink/?LinkId=828886\"", "checksumFailMoreInfoUrl:\"\"")
+        txt = txt.replace("else if(n.agents)r=await this.windowsMainService.openAgentsWindow(a);", "else if(n.agents)return;")
+        txt = txt.replace("if(s.agents)return r.openAgentsWindow({context:o,cli:s,initialStartup:!0});", "if(s.agents)return;")
+        
         t1 = "async openAgentsWindow(e,t,r,o,s=!1,a,l){"
         if t1 in txt:
             txt = txt.replace(t1, "async openAgentsWindow(e,t,r,o,s=!1,a,l){return [];")
             print("Disabled openAgentsWindow in mainImpl.js (manager)")
+            
         t2 = "async openAgentsWindow(e,t){let r=await this.windowsMainService.openAgentsWindow"
         if t2 in txt:
             txt = txt.replace(t2, "async openAgentsWindow(e,t){return;let r=await this.windowsMainService.openAgentsWindow")
             print("Disabled openAgentsWindow in mainImpl.js (service)")
+            
+        t3 = "async ensureAgentsWindow(e){"
+        if t3 in txt:
+            txt = txt.replace(t3, "async ensureAgentsWindow(e){return null;")
+            print("Disabled ensureAgentsWindow in mainImpl.js")
+            
         main_impl.write_text(txt, encoding="utf-8")
     except Exception as e:
         print(f"Note disabling agents in mainImpl: {e}")
 
-# Disable Accounts/Profile action registration and Agents window in workbench.desktop.main.js
+# 5. Patch workbench.desktop.main.js
 wb_js = app_out / "vs" / "workbench" / "workbench.desktop.main.js"
 if wb_js.exists():
     try:
         txt = wb_js.read_text(encoding="utf-8", errors="ignore")
+        
+        # Disable Accounts/Profile in activity bar
         old_acc = "this.accountsVisibilityPreference&&this.globalActivityActionBar.push(this.accountAction,{index:bj.ACCOUNTS_ACTION_INDEX})"
         new_acc = "false&&this.globalActivityActionBar.push(this.accountAction,{index:bj.ACCOUNTS_ACTION_INDEX})"
         if old_acc in txt:
             txt = txt.replace(old_acc, new_acc)
-            print("Successfully disabled Accounts/Profile activity bar icon registration in workbench.desktop.main.js")
-        
+            print("Disabled Accounts/Profile activity bar registration in workbench.desktop.main.js")
+            
+        # Filter out Accounts from titlebar action toolbar
+        old_tb_acc = "T2(this.globalToolbarMenu.getActions(),n,r=>r===MDo)"
+        new_tb_acc = "T2(this.globalToolbarMenu.getActions().filter(a=>!a.id?.toLowerCase().includes('account')),n,r=>r===MDo)"
+        if old_tb_acc in txt:
+            txt = txt.replace(old_tb_acc, new_tb_acc)
+            print("Filtered Accounts from titlebar toolbar in workbench.desktop.main.js")
+
         # Disable Agent precondition XA
         if 'D.has("config.chat.agent.enabled")' in txt:
             txt = txt.replace('D.has("config.chat.agent.enabled")', 'D.False')
             print("Disabled Agent precondition XA in workbench.desktop.main.js")
             
+        # Neutralize all openAgentsWindow call sites
         txt = txt.replace("await o.get(Po).openAgentsWindow({", "return; await o.get(Po).openAgentsWindow({")
         txt = txt.replace("await t.openAgentsWindow({...e,", "return; await t.openAgentsWindow({...e,")
         txt = txt.replace("await i.openAgentsWindow({folderUri:", "return; await i.openAgentsWindow({folderUri:")
         txt = txt.replace("await this.nativeHostService.openAgentsWindow({", "return; await this.nativeHostService.openAgentsWindow({")
-        
+
+        # Defeat migration hint calculation so banner never renders
+        if "async computeMigrationHint(e,t=Ie.None){" in txt:
+            txt = txt.replace("async computeMigrationHint(e,t=Ie.None){", "async computeMigrationHint(e,t=Ie.None){return;")
+            print("Disabled computeMigrationHint in workbench.desktop.main.js")
+            
+        # Defeat integrity check in uwe class
+        if "this.isPurePromise=this._isPure(),this._compute()" in txt:
+            txt = txt.replace("this.isPurePromise=this._isPure(),this._compute()", "this.isPurePromise=Promise.resolve({isPure:!0,proof:[]})")
+            print("Neutered integrity isPurePromise in workbench.desktop.main.js")
+        if "_showNotification(){" in txt:
+            txt = txt.replace("_showNotification(){", "_showNotification(){return;")
+            print("Silenced _showNotification() in workbench.desktop.main.js")
+        if "async _compute(){" in txt:
+            txt = txt.replace("async _compute(){", "async _compute(){return;")
+            print("Silenced _compute() in workbench.desktop.main.js")
+        if "async _isPure(){" in txt:
+            txt = txt.replace("async _isPure(){", "async _isPure(){return{isPure:!0,proof:[]};")
+            print("Patched _isPure() in workbench.desktop.main.js")
+        if "isPure:e===t" in txt:
+            txt = txt.replace("isPure:e===t", "isPure:!0")
+            print("Forced _createChecksumPair isPure:true in workbench.desktop.main.js")
+
         wb_js.write_text(txt, encoding="utf-8")
     except Exception as e:
         print(f"Note patching workbench.desktop.main.js: {e}")
 
-sessions_js = VISIONX_DIST / "resources" / "app" / "out" / "vs" / "sessions" / "sessions.desktop.main.js"
-if sessions_js.exists():
-    try:
-        txt = sessions_js.read_text(encoding="utf-8", errors="ignore")
-        sessions_js.write_text("window.close();\n" + txt, encoding="utf-8")
-        print("Injected auto-close guard into sessions.desktop.main.js")
-    except Exception as e:
-        print(f"Note injecting sessions auto-close: {e}")
-
+# 8c. String rebranding & cleaning in NLS files
 string_replacements = [
     ("copilot-vscode", "visionx"),
     ("Return to VS Code Editor", "Return to VisionX Editor"),
@@ -558,6 +611,9 @@ string_replacements = [
     ("Open in VS Code", "Open in VisionX"),
     ("Open VS Code Window", "Open VisionX Window"),
     ("to VS Code Editor", "to VisionX Editor"),
+    ("Chat with Copilot", "Chat with VisionX"),
+    ("Copilot Fusion", "VisionX AI"),
+    ("Your {0} installation appears to be corrupt. Please reinstall.", ""),
 ]
 
 for bundle_path in [
@@ -597,28 +653,6 @@ if ms_auth_js.exists():
     ms_auth_js.write_text(txt, encoding="utf-8")
     print("Rebranded microsoft-authentication extension.js")
 
-# 8c. Neutralize installation corrupt/tamper integrity check and clear checksums
-print("Neutralizing integrity checks and updating product checksums...")
-for p in [app_out / "vs" / "workbench" / "workbench.desktop.main.js", app_out / "vs" / "sessions" / "sessions.desktop.main.js"]:
-    if p.exists():
-        try:
-            txt = p.read_text(encoding="utf-8", errors="ignore")
-            # 1. Defeat _showNotification
-            if "_showNotification(){" in txt:
-                txt = txt.replace("_showNotification(){", "_showNotification(){return;")
-                print(f"Silenced _showNotification() in {p.name}")
-            # 2. Defeat _compute
-            if "async _compute(){" in txt:
-                txt = txt.replace("async _compute(){", "async _compute(){return;")
-                print(f"Silenced _compute() in {p.name}")
-            # 3. Defeat _isPure
-            if "async _isPure(){" in txt:
-                txt = txt.replace("async _isPure(){", "async _isPure(){return{isPure:true,proof:[]};")
-                print(f"Patched _isPure() in {p.name}")
-            p.write_text(txt, encoding="utf-8")
-        except Exception as e:
-            print(f"Note patching {p.name}: {e}")
-
 # Empty checksums in product.json so no file is ever verified
 if product_json_path.exists():
     with open(product_json_path, "r", encoding="utf-8") as f:
@@ -643,8 +677,8 @@ try:
         "--set-version-string", "LegalCopyright", "Copyright (C) 2026 VisionX Contributors",
         "--set-version-string", "InternalName", "VisionX",
         "--set-version-string", "OriginalFilename", "VisionX.exe",
-        "--set-file-version", "1.6.1.0",
-        "--set-product-version", "1.6.1.0"
+        "--set-file-version", "1.6.2.0",
+        "--set-product-version", "1.6.2.0"
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode == 0:
@@ -655,5 +689,5 @@ except Exception as e:
     print("Could not run rcedit:", e)
 
 print("==================================================")
-print(" VisionX IDE v1.6.1 build completed successfully! ")
+print(" VisionX IDE v1.6.2 build completed successfully! ")
 print("==================================================")

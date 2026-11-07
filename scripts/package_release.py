@@ -7,10 +7,10 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 DIST_DIR = BASE_DIR / "dist"
 SOURCE_DIR = DIST_DIR / "VisionX-win32-x64"
-OUTPUT_ZIP = DIST_DIR / "VisionX-Windows-x64-v1.6.1.zip"
+OUTPUT_ZIP = DIST_DIR / "VisionX-Windows-x64-v1.6.2.zip"
 
 print("==================================================")
-print("     VisionX IDE v1.6.1 - Packaging Release      ")
+print("     VisionX IDE v1.6.2 - Packaging Release      ")
 print("==================================================")
 
 if not SOURCE_DIR.exists():
@@ -22,7 +22,6 @@ if OUTPUT_ZIP.exists():
 
 print(f"Creating standalone distribution zip: {OUTPUT_ZIP.name}...")
 
-# Check if 7z is available for high-speed multi-threaded compression
 seven_zip = shutil.which("7z") or shutil.which("7z.exe")
 if seven_zip:
     print(f"Using 7-Zip ({seven_zip}) for high-speed compression...")

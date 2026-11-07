@@ -14,7 +14,7 @@ EXE_PATH = INSTALL_DIR / "VisionX.exe"
 BIN_PATH = INSTALL_DIR / "bin"
 
 print("==================================================")
-print("     VisionX IDE v1.6.1 - Local Windows Re-installer ")
+print("     VisionX IDE v1.6.2 - Local Windows Re-installer ")
 print("==================================================")
 
 if not DIST_DIR.exists():
@@ -35,11 +35,21 @@ if INSTALL_DIR.exists():
         print(f"Note during cleanup: {e}")
 
 INSTALL_DIR.mkdir(parents=True, exist_ok=True)
-print("Copying fresh VisionX v1.6.1 binaries...")
+print("Copying fresh VisionX v1.6.2 binaries...")
 shutil.copytree(DIST_DIR, INSTALL_DIR, dirs_exist_ok=True)
 print("Binaries copied successfully.")
 
-# 3. Create Windows Shortcuts via PowerShell script
+# 3. Clean any corrupted NLS / cache markers
+appdata = Path(os.environ.get("APPDATA", ""))
+clp_dir = appdata / "VisionX" / "clp"
+if clp_dir.exists():
+    try:
+        shutil.rmtree(clp_dir)
+        print("Cleared cached NLS markers from AppData/VisionX/clp.")
+    except Exception:
+        pass
+
+# 4. Create Windows Shortcuts via PowerShell script
 desktop = Path.home() / "Desktop"
 desktop_lnk = desktop / "VisionX.lnk"
 start_menu = Path(os.environ.get("APPDATA", str(Path.home() / "AppData" / "Roaming"))) / "Microsoft" / "Windows" / "Start Menu" / "Programs"
@@ -64,7 +74,7 @@ $StartLnk.Save()
 """
 subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd], capture_output=True, timeout=15)
 
-# 4. PATH Registration
+# 5. PATH Registration
 print("Verifying User PATH...")
 ps_path = f"""
 $curr = [Environment]::GetEnvironmentVariable('Path', 'User')
@@ -74,9 +84,8 @@ if (-not $curr.Contains('{str(BIN_PATH)}')) {{
 """
 subprocess.run(["powershell", "-NoProfile", "-Command", ps_path], capture_output=True, timeout=10)
 
-# 5. Automatically migrate VS Code settings and extensions
+# 6. Automatically migrate VS Code settings and extensions
 print("Migrating Visual Studio Code settings and extensions to VisionX...")
-appdata = Path(os.environ.get("APPDATA", ""))
 userprofile = Path(os.environ.get("USERPROFILE", ""))
 vscode_user = appdata / "Code" / "User"
 visionx_user_targets = [appdata / "VisionX" / "User", appdata / ".visionx" / "User"]
@@ -112,5 +121,5 @@ if vscode_ext.exists():
     print(f"Migrated and linked {linked_exts} extensions from VS Code.")
 
 print("==================================================")
-print(" VisionX IDE v1.6.1 Installed Locally!            ")
+print(" VisionX IDE v1.6.2 Installed Locally!            ")
 print("==================================================")
