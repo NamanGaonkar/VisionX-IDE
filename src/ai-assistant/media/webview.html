@@ -7,8 +7,8 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background-color: var(--vscode-editor-background, #080a10);
-      color: var(--vscode-foreground, #cccccc);
+      background-color: var(--vscode-sideBar-background, #0a0d14);
+      color: var(--vscode-foreground, #cbd5e1);
       font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
       font-size: 13px;
       display: flex;
@@ -18,99 +18,52 @@
       user-select: none;
     }
 
-    /* Top Tabs Row */
+    /* Minimalist Top Header */
     .chat-top-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 4px 10px;
-      border-bottom: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.18));
-      background-color: var(--vscode-sideBar-background, transparent);
-      min-height: 35px;
+      padding: 6px 12px;
+      border-bottom: 1px solid var(--vscode-panel-border, rgba(255, 255, 255, 0.08));
+      background-color: var(--vscode-sideBar-background, #0a0d14);
+      min-height: 36px;
     }
-    .chat-tab-pill {
-      background: var(--vscode-tab-activeBackground, rgba(255, 255, 255, 0.08));
-      color: var(--vscode-tab-activeForeground, var(--vscode-foreground));
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: 500;
+    .header-title-row {
       display: flex;
       align-items: center;
-      gap: 5px;
-    }
-
-    /* Agent Mode Row */
-    .agent-mode-bar {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 12px;
-      background: rgba(255, 255, 255, 0.02);
-      border-bottom: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.12));
-    }
-    .mode-pill {
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 11px;
-      color: #888;
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: all 0.15s;
-    }
-    .mode-pill:hover {
-      color: #ccc;
-      background: rgba(255, 255, 255, 0.05);
-    }
-    .mode-pill.active {
-      background: rgba(255, 85, 0, 0.2);
-      border-color: rgba(255, 85, 0, 0.4);
-      color: #ffaa00;
+      gap: 7px;
       font-weight: 600;
+      font-size: 12px;
+      color: var(--vscode-foreground, #f1f5f9);
     }
-
-    .action-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 6px;
-    }
-    .action-chip {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: var(--vscode-foreground, #ccc);
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 11px;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .action-chip:hover {
-      background: rgba(255, 85, 0, 0.18);
-      border-color: #ff5500;
-      color: #ffaa00;
+    .header-status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ff5500;
+      box-shadow: 0 0 6px rgba(255, 85, 0, 0.6);
     }
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 3px;
+      gap: 4px;
     }
     .icon-btn {
       background: transparent;
       border: none;
-      color: var(--vscode-foreground, #ccc);
+      color: var(--vscode-foreground, #94a3b8);
       cursor: pointer;
       padding: 4px 6px;
       border-radius: 4px;
       font-size: 12px;
-      opacity: 0.8;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.15s;
     }
     .icon-btn:hover {
-      opacity: 1;
-      background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.1));
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
     }
     .icon-btn svg {
       width: 14px;
@@ -118,43 +71,15 @@
       fill: currentColor;
     }
 
-    /* Sessions Row */
-    .sessions-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 6px 12px;
-      font-size: 12px;
-      color: var(--vscode-foreground, #ccc);
-      font-weight: 600;
-      border-bottom: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.15));
-      cursor: pointer;
-      position: relative;
-    }
-    .sessions-bar:hover {
-      background: rgba(255, 255, 255, 0.03);
-    }
-    .sessions-left {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .sessions-actions {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    /* Interactive Sessions Drawer */
+    /* Collapsible Sessions Drawer */
     #sessions-drawer {
       display: none;
       flex-direction: column;
-      background: var(--vscode-dropdown-background, #0e111a);
-      border-bottom: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.25));
+      background: #0f131f;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       padding: 8px 10px;
       gap: 6px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-      max-height: 180px;
+      max-height: 160px;
       overflow-y: auto;
     }
     .session-item {
@@ -165,10 +90,10 @@
       border-radius: 4px;
       cursor: pointer;
       font-size: 11px;
-      color: var(--vscode-foreground);
+      color: var(--vscode-foreground, #ccc);
     }
     .session-item:hover {
-      background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.08));
+      background: rgba(255, 255, 255, 0.06);
     }
     .session-item.active {
       background: rgba(255, 85, 0, 0.15);
@@ -179,7 +104,6 @@
       color: #888;
       cursor: pointer;
       padding: 2px 4px;
-      border-radius: 3px;
     }
     .session-delete:hover {
       color: #ff4d4f;
@@ -187,9 +111,9 @@
     .new-session-btn {
       width: 100%;
       padding: 5px;
-      background: var(--vscode-button-secondaryBackground, rgba(255, 255, 255, 0.08));
-      color: var(--vscode-foreground);
-      border: 1px dashed var(--vscode-panel-border, rgba(128, 128, 128, 0.3));
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--vscode-foreground, #ccc);
+      border: 1px dashed rgba(255, 255, 255, 0.2);
       border-radius: 4px;
       cursor: pointer;
       font-size: 11px;
@@ -197,8 +121,8 @@
     }
     .new-session-btn:hover {
       background: rgba(255, 85, 0, 0.15);
-      border-color: #ff5500;
       color: #ffaa00;
+      border-color: #ff5500;
     }
 
     /* Chat Messages Stream */
@@ -208,48 +132,25 @@
       padding: 12px 14px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
       user-select: text;
     }
 
-    /* Empty State Cards */
+    /* Empty State */
     .empty-state {
       margin-top: auto;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      padding: 10px 0;
-    }
-    .banner-card {
-      background: var(--vscode-editorWidget-background, rgba(255, 255, 255, 0.03));
-      border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
-      border-radius: 6px;
-      padding: 9px 12px;
+      gap: 6px;
+      padding: 12px 0;
+      color: #718096;
       font-size: 12px;
-      line-height: 1.45;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      position: relative;
+      line-height: 1.5;
     }
-    .banner-close {
-      position: absolute;
-      top: 8px;
-      right: 10px;
-      color: #888;
-      cursor: pointer;
-    }
-    .banner-close:hover {
-      color: #fff;
-    }
-    .banner-link {
-      color: var(--vscode-textLink-foreground, #3794ff);
-      cursor: pointer;
-      text-decoration: none;
-      font-weight: 500;
-    }
-    .banner-link:hover {
-      text-decoration: underline;
+    .empty-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
     }
 
     /* Message Bubbles */
@@ -261,8 +162,9 @@
     }
     .msg-user {
       align-self: flex-end;
-      background: var(--vscode-badge-background, rgba(255, 255, 255, 0.08));
-      color: var(--vscode-badge-foreground, var(--vscode-foreground));
+      background: #161b2a;
+      color: #f1f5f9;
+      border: 1px solid rgba(255, 255, 255, 0.1);
       padding: 8px 12px;
       border-radius: 8px;
       max-width: 90%;
@@ -272,17 +174,17 @@
     }
     .msg-ai {
       align-self: flex-start;
-      color: var(--vscode-foreground);
-      padding: 4px 0;
+      color: #e2e8f0;
+      padding: 2px 0;
       width: 100%;
       font-size: 13px;
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
     /* Code Blocks */
     .code-container {
-      background: var(--vscode-textCodeBlock-background, rgba(0, 0, 0, 0.3));
-      border: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.25));
+      background: #080a12;
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 6px;
       margin: 8px 0;
       overflow: hidden;
@@ -292,23 +194,26 @@
       justify-content: space-between;
       align-items: center;
       padding: 4px 10px;
-      background: var(--vscode-sideBar-background, rgba(255, 255, 255, 0.04));
-      border-bottom: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.15));
+      background: #0e121e;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       font-size: 11px;
-      color: var(--vscode-descriptionForeground, #888);
+      color: #888;
     }
     .code-action-btn {
       background: transparent;
-      border: 1px solid var(--vscode-button-border, rgba(128,128,128,0.3));
-      color: var(--vscode-foreground);
-      padding: 2px 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ccc;
+      padding: 2px 7px;
       border-radius: 4px;
       font-size: 11px;
       cursor: pointer;
       margin-left: 4px;
+      transition: all 0.15s;
     }
     .code-action-btn:hover {
-      background: var(--vscode-button-hoverBackground, rgba(255,255,255,0.1));
+      background: rgba(255, 85, 0, 0.2);
+      border-color: #ff5500;
+      color: #ffaa00;
     }
     pre code {
       display: block;
@@ -316,7 +221,7 @@
       overflow-x: auto;
       font-family: var(--vscode-editor-font-family, 'Consolas', monospace);
       font-size: 12px;
-      color: var(--vscode-editor-foreground, inherit);
+      color: #e2e8f0;
       line-height: 1.45;
     }
 
@@ -326,11 +231,11 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      border-top: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.15));
+      border-top: 1px solid var(--vscode-panel-border, rgba(255, 255, 255, 0.08));
     }
     .chat-input-box {
-      border: 1px solid var(--vscode-input-border, rgba(128, 128, 128, 0.35));
-      background: var(--vscode-input-background, #1e1e1e);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: #0e121e;
       border-radius: 8px;
       display: flex;
       flex-direction: column;
@@ -339,7 +244,7 @@
       transition: border-color 0.2s;
     }
     .chat-input-box:focus-within {
-      border-color: var(--vscode-focusBorder, #007acc);
+      border-color: #ff5500;
     }
     textarea.copilot-prompt {
       width: 100%;
@@ -348,14 +253,14 @@
       border: none;
       outline: none;
       resize: none;
-      color: var(--vscode-input-foreground, #cccccc);
+      color: #f1f5f9;
       font-family: inherit;
       font-size: 13px;
       line-height: 1.4;
       padding: 2px 4px;
     }
     textarea.copilot-prompt::placeholder {
-      color: var(--vscode-input-placeholderForeground, #888);
+      color: #64748b;
     }
 
     /* Input Toolbar Row */
@@ -378,9 +283,9 @@
 
     /* Model Pill */
     .model-pill {
-      background: var(--vscode-badge-background, rgba(255, 255, 255, 0.07));
-      color: var(--vscode-foreground, #ccc);
-      border: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.25));
+      background: rgba(255, 255, 255, 0.06);
+      color: #cbd5e1;
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 12px;
       padding: 2px 8px;
       font-size: 11px;
@@ -389,14 +294,16 @@
       gap: 5px;
       cursor: pointer;
       user-select: none;
-      transition: background 0.15s;
+      transition: all 0.15s;
     }
     .model-pill:hover {
-      background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.15));
+      background: rgba(255, 85, 0, 0.15);
+      border-color: #ff5500;
+      color: #ffaa00;
     }
     .model-pill svg {
-      width: 13px;
-      height: 13px;
+      width: 12px;
+      height: 12px;
       fill: currentColor;
     }
 
@@ -404,66 +311,42 @@
       width: 24px;
       height: 24px;
       border-radius: 12px;
-      background: var(--vscode-button-background, #0078d4);
-      color: var(--vscode-button-foreground, #ffffff);
+      background: #ff5500;
+      color: #ffffff;
       border: none;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       font-size: 12px;
-      transition: opacity 0.15s;
+      font-weight: bold;
+      transition: background 0.15s;
     }
     .send-arrow-btn:hover {
-      background: var(--vscode-button-hoverBackground, #0060aa);
-    }
-
-    /* Footer Row underneath Input */
-    .chat-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 4px;
-      font-size: 11px;
-      color: var(--vscode-descriptionForeground, #888);
-    }
-    .footer-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .footer-left svg {
-      width: 12px;
-      height: 12px;
-      fill: currentColor;
-    }
-    .footer-right {
-      display: flex;
-      align-items: center;
+      background: #e04400;
     }
 
     /* Universal Provider Popover */
     #model-popover {
       display: none;
       flex-direction: column;
-      gap: 9px;
-      background: var(--vscode-dropdown-background, var(--vscode-editor-background));
-      border: 1px solid var(--vscode-dropdown-border, var(--vscode-panel-border));
+      gap: 8px;
+      background: #0d101a;
+      border: 1px solid rgba(255, 85, 0, 0.35);
       border-radius: 8px;
       padding: 12px 14px;
       margin-bottom: 6px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
-      max-height: 85vh;
-      overflow-y: auto;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     }
     .popover-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding-bottom: 4px;
-      border-bottom: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.2));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       font-weight: 600;
       font-size: 12px;
+      color: #f1f5f9;
     }
     .popover-header span.close-x {
       cursor: pointer;
@@ -485,38 +368,40 @@
     }
     .popover-row label {
       font-size: 11px;
-      color: var(--vscode-descriptionForeground, #888);
+      color: #94a3b8;
       text-transform: uppercase;
       font-weight: 600;
       letter-spacing: 0.5px;
     }
     .popover-row select, .popover-row input {
-      background: var(--vscode-input-background, #1e1e1e);
-      color: var(--vscode-input-foreground, #ccc);
-      border: 1px solid var(--vscode-input-border, rgba(128,128,128,0.3));
-      padding: 6px 8px;
+      background: #141724;
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 5px 8px;
       border-radius: 4px;
       font-size: 12px;
       outline: none;
     }
     .popover-row select:focus, .popover-row input:focus {
-      border-color: var(--vscode-focusBorder, #007acc);
+      border-color: #ff5500;
     }
     .scan-btn {
-      background: var(--vscode-button-secondaryBackground, rgba(255,255,255,0.08));
-      color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
-      border: 1px solid var(--vscode-button-border, rgba(128,128,128,0.3));
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      border: 1px solid rgba(255, 255, 255, 0.2);
       padding: 2px 8px;
       border-radius: 4px;
       font-size: 11px;
       cursor: pointer;
     }
     .scan-btn:hover {
-      background: var(--vscode-button-hoverBackground, rgba(255,255,255,0.15));
+      background: rgba(255, 85, 0, 0.2);
+      border-color: #ff5500;
+      color: #ffaa00;
     }
     .popover-status {
       font-size: 11px;
-      color: var(--vscode-textLink-foreground, #3794ff);
+      color: #ff8800;
       min-height: 16px;
       word-break: break-word;
     }
@@ -528,22 +413,22 @@
     .popover-btns button {
       flex: 1;
       padding: 6px;
-      font-size: 12px;
+      font-size: 11px;
       border-radius: 4px;
       cursor: pointer;
       border: 1px solid transparent;
       font-weight: 500;
     }
     .btn-primary {
-      background: var(--vscode-button-background, #0078d4);
-      color: var(--vscode-button-foreground, #ffffff);
+      background: #ff5500;
+      color: #ffffff;
     }
     .btn-primary:hover {
-      background: var(--vscode-button-hoverBackground, #0060aa);
+      background: #e04400;
     }
     .btn-secondary {
-      background: var(--vscode-button-secondaryBackground, rgba(255,255,255,0.08));
-      color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+      background: rgba(255, 255, 255, 0.08);
+      color: #ccc;
     }
     .btn-secondary:hover {
       background: rgba(255, 255, 255, 0.12);
@@ -551,34 +436,19 @@
   </style>
 </head>
 <body>
-  <!-- Header Bar -->
+  <!-- Minimal Header -->
   <div class="chat-top-header">
-    <div class="chat-tab-pill">
-      <span>Agentic Chat</span>
+    <div class="header-title-row">
+      <span class="header-status-dot"></span>
+      <span>VisionX Chat</span>
+      <span style="font-size: 11px; color: #64748b; font-weight: normal;" id="active-session-name">(Main)</span>
     </div>
     <div class="header-actions">
       <button class="icon-btn" id="new-chat-btn" title="New Session">＋</button>
+      <button class="icon-btn" id="sessions-toggle" title="View Sessions">≡</button>
       <button class="icon-btn" id="header-settings-btn" title="Configure AI Provider">
         <svg viewBox="0 0 16 16"><path d="M9.1 4.4L8.6 2H7.4l-.5 2.4-.7.3-2-1.3-.9.8 1.3 2-.2.7-2.5.5v1.2l2.5.5.3.8-1.4 1.9.8.8 2-1.4.7.3.5 2.4h1.2l.5-2.4.7-.3 2 1.3.8-.8-1.3-2 .3-.7 2.4-.5V7.6l-2.4-.5-.3-.7 1.3-2-.8-.8-2 1.3-.7-.3zM8 10c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
       </button>
-    </div>
-  </div>
-
-  <!-- Agent Mode Bar -->
-  <div class="agent-mode-bar">
-    <div class="mode-pill active" data-mode="agent">Code Agent</div>
-    <div class="mode-pill" data-mode="architect">Architect</div>
-    <div class="mode-pill" data-mode="qa">Debug & Fix</div>
-  </div>
-
-  <!-- Sessions Bar -->
-  <div class="sessions-bar" id="sessions-toggle" title="Click to view/switch sessions">
-    <div class="sessions-left">
-      <span>Sessions</span>
-      <span style="font-size: 10px; color: #888;" id="active-session-name">(Main)</span>
-    </div>
-    <div class="sessions-actions">
-      <button class="icon-btn" id="refresh-chat-btn" title="Refresh Session">↺</button>
     </div>
   </div>
 
@@ -588,26 +458,17 @@
     <button class="new-session-btn" id="drawer-new-session">+ Start New Conversation</button>
   </div>
 
-  <!-- Chat Area -->
+  <!-- Chat Messages Stream -->
   <div class="chat-messages" id="chat-messages">
     <div class="empty-state" id="empty-state">
-      <div class="banner-card" id="customizations-card">
-        <span class="banner-close" id="card-close-btn">✕</span>
-        <span>Active context and 3D architecture constellation ready.</span>
-        <a href="#" class="banner-link" id="link-open-graph">Open 3D Project Architecture Graph</a>
-      </div>
-      <div class="action-chips">
-        <div class="action-chip" onclick="quickPrompt('Explain the overall architecture and how files are connected.')">Explain Architecture</div>
-        <div class="action-chip" onclick="quickPrompt('Audit this file for potential bugs and performance bottlenecks.')">Audit Bugs</div>
-        <div class="action-chip" onclick="quickPrompt('Write unit tests for the active file.')">Generate Tests</div>
-        <div class="action-chip" onclick="quickPrompt('Refactor the selected code for clarity.')">Refactor Code</div>
-      </div>
+      <div class="empty-title">VisionX Workspace Chat</div>
+      <div>Ask questions, analyze codebase architecture, refactor, or debug code with full context awareness.</div>
     </div>
   </div>
 
   <!-- Input Wrapper -->
   <div class="input-wrapper">
-    <!-- Universal Provider & Model Configuration Popover -->
+    <!-- BYOK Configuration Popover -->
     <div id="model-popover">
       <div class="popover-header">
         <span>BYOK Provider Configuration</span>
@@ -642,13 +503,13 @@
       </div>
 
       <div class="popover-row" id="pop-baseurl-row">
-        <label id="pop-baseurl-label">API Base URL</label>
+        <label>API Base URL</label>
         <input type="text" id="pop-base-url" placeholder="https://your-ollama-online.com or http://localhost:11434">
       </div>
 
       <div class="popover-row" id="pop-apikey-row">
-        <label id="pop-apikey-label">API Key / Access Token</label>
-        <input type="password" id="pop-api-key" placeholder="Paste your API key or Bearer token (optional for local Ollama)">
+        <label>API Key / Access Token</label>
+        <input type="password" id="pop-api-key" placeholder="Paste your API key or Bearer token">
       </div>
 
       <div class="popover-row">
@@ -668,14 +529,14 @@
 
       <div class="popover-status" id="pop-status">Select provider and configure credentials.</div>
       <div class="popover-btns">
-        <button class="btn-primary" id="pop-save-btn">Save & Activate Configuration</button>
+        <button class="btn-primary" id="pop-save-btn">Save Configuration</button>
         <button class="btn-secondary" id="pop-cancel-btn">Cancel</button>
       </div>
     </div>
 
-    <!-- Rounded Input Card -->
+    <!-- Rounded Input Box -->
     <div class="chat-input-box">
-      <textarea class="copilot-prompt" id="copilot-input" placeholder="Chat with VisionX... (Enter to send, Shift+Enter for newline)"></textarea>
+      <textarea class="copilot-prompt" id="copilot-input" placeholder="Ask VisionX a question or reference @code..."></textarea>
       
       <div class="input-toolbar">
         <div class="toolbar-left">
@@ -685,28 +546,15 @@
           </label>
           <div class="model-pill" id="model-pill-btn" title="Click to configure Model and API Key">
             <svg viewBox="0 0 16 16"><path d="M8 1a5 5 0 0 0-5 5c0 1.5.7 2.8 1.8 3.7A5 5 0 0 0 1 14h14a5 5 0 0 0-3.8-4.3A5 5 0 0 0 13 6a5 5 0 0 0-5-5zm-2 5a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm4 0a1 1 0 1 1 2 0 1 1 0 0 1-2 0z"/></svg>
-            <span id="model-pill-text">VisionX Fusion | Standard</span>
+            <span id="model-pill-text">Claude 3.7 Sonnet</span>
           </div>
-          <span id="attached-img-tag" style="display:none; font-size:11px; color:var(--vscode-textLink-foreground); cursor:pointer;">[Image Attached ✕]</span>
+          <span id="attached-img-tag" style="display:none; font-size:11px; color:#ff8800; cursor:pointer;">[Image Attached ✕]</span>
         </div>
         
         <div class="toolbar-right">
-          <button class="icon-btn" id="mic-btn" title="Voice Input">
-            <svg viewBox="0 0 16 16"><path d="M8 11a3 3 0 0 0 3-3V4a3 3 0 0 0-6 0v4a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H2a6 6 0 0 0 5 5.9V15h2v-1.1A6 6 0 0 0 14 8h-1z"/></svg>
-          </button>
+          <span id="active-context-label" style="font-size:11px; color:#64748b; margin-right:4px;"></span>
           <button class="send-arrow-btn" id="send-btn" title="Send (Enter)">↑</button>
         </div>
-      </div>
-    </div>
-
-    <!-- Footer row underneath input -->
-    <div class="chat-footer">
-      <div class="footer-left">
-        <svg viewBox="0 0 16 16"><path d="M8 1a5 5 0 0 0-5 5c0 1.5.7 2.8 1.8 3.7A5 5 0 0 0 1 14h14a5 5 0 0 0-3.8-4.3A5 5 0 0 0 13 6a5 5 0 0 0-5-5z"/></svg>
-        <span>VisionX</span>
-      </div>
-      <div class="footer-right">
-        <span id="active-context-label">Ready</span>
       </div>
     </div>
   </div>

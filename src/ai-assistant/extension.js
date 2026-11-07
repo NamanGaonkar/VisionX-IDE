@@ -595,14 +595,16 @@ async function fetchProviderModels(provider, baseUrl, apiKey) {
         headers['X-Title'] = 'VisionX';
     }
 
-    if (provider === 'ollama') {
-        if (!baseUrl) baseUrl = 'http://localhost:11434';
+    if (provider === 'ollama' || provider === 'ollama_cloud') {
+        if (!baseUrl) {
+            baseUrl = 'http://localhost:11434';
+        }
         let models = [];
         
-        // 1. Native Ollama tags
+        // 1. Native Ollama /api/tags
         try {
             const resp = await fetch(`${baseUrl}/api/tags`, {
-                headers: apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {},
+                headers,
                 signal: AbortSignal.timeout(6000)
             });
             if (resp.ok) {
@@ -613,11 +615,11 @@ async function fetchProviderModels(provider, baseUrl, apiKey) {
             }
         } catch (e) {}
 
-        // 2. OpenAI-compatible /v1/models (modern Ollama & Cloud proxies)
+        // 2. OpenAI-compatible /v1/models (modern Ollama, cloud Ollama proxies, LiteLLM)
         if (models.length === 0) {
             try {
                 const resp = await fetch(`${baseUrl}/v1/models`, {
-                    headers: apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {},
+                    headers,
                     signal: AbortSignal.timeout(6000)
                 });
                 if (resp.ok) {
@@ -690,8 +692,12 @@ async function executeChatCompletion({ provider, baseUrl, apiKey, model, prompt,
     baseUrl = (baseUrl || '').trim().replace(/\/+$/, '');
     model = model || 'claude-3.7-sonnet';
 
-    if (provider === 'ollama') {
+    if (provider === 'ollama' || provider === 'ollama_cloud') {
         if (!baseUrl) baseUrl = 'http://localhost:11434';
+        const ollamaHeaders = {
+            'Content-Type': 'application/json',
+            ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
+        };
         
         // 1. Try OpenAI-compatible /v1/chat/completions
         try {
@@ -702,10 +708,7 @@ async function executeChatCompletion({ provider, baseUrl, apiKey, model, prompt,
             };
             const resp = await fetch(`${baseUrl}/v1/chat/completions`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
-                },
+                headers: ollamaHeaders,
                 body: JSON.stringify(payload),
                 signal: AbortSignal.timeout(60000)
             });
@@ -719,10 +722,7 @@ async function executeChatCompletion({ provider, baseUrl, apiKey, model, prompt,
         try {
             const resp = await fetch(`${baseUrl}/api/chat`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
-                },
+                headers: ollamaHeaders,
                 body: JSON.stringify({
                     model,
                     messages: messages || [{ role: 'user', content: prompt }],
@@ -737,24 +737,26 @@ async function executeChatCompletion({ provider, baseUrl, apiKey, model, prompt,
         } catch (e) {}
 
         // 3. Native Ollama /api/generate
-        const resp = await fetch(`${baseUrl}/api/generate`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
-            },
-            body: JSON.stringify({
-                model,
-                prompt: typeof prompt === 'string' ? prompt : (messages?.[messages.length-1]?.content || ''),
-                stream: false
-            }),
-            signal: AbortSignal.timeout(60000)
-        });
-        if (!resp.ok) {
-            throw new Error(`Ollama error (${resp.status}): ${await resp.text()}`);
+        try {
+            const resp = await fetch(`${baseUrl}/api/generate`, {
+                method: 'POST',
+                headers: ollamaHeaders,
+                body: JSON.stringify({
+                    model,
+                    prompt: typeof prompt === 'string' ? prompt : (messages?.[messages.length-1]?.content || ''),
+                    stream: false
+                }),
+                signal: AbortSignal.timeout(60000)
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                return data.response || '';
+            }
+            const errText = await resp.text();
+            throw new Error(`Ollama error (${resp.status}): ${errText}`);
+        } catch (err) {
+            throw new Error(`Ollama connection error at ${baseUrl}: ${err.message}`);
         }
-        const data = await resp.json();
-        return data.response || '';
     }
 
     if (provider === 'anthropic') {

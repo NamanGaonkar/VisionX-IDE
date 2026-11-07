@@ -5,4 +5,5 @@ __pycache__/
 *.pyc
 .vscode/
 .visionx/
+.commandcode/
 node_modules/

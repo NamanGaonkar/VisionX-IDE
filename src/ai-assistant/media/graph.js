@@ -32,21 +32,24 @@ let edges = [];
 let selectedNode = null;
 let hoveredNode = null;
 
-// 3D Camera & Orientation
-let rotX = 0.35;
-let rotY = 0.45;
-let targetRotX = 0.35;
-let targetRotY = 0.45;
+// True 3D Orbital Camera (Continuous 360 Rotation without Gimbal Lock)
+let yaw = 0.5;          // Horizontal angle (continuous -Infinity to +Infinity)
+let targetYaw = 0.5;
+let pitch = 0.25;       // Vertical angle (clamped -1.45 to +1.45 rad)
+let targetPitch = 0.25;
 
 let zoom = 1.0;
 let targetZoom = 1.0;
+const BASE_DISTANCE = 560;
+const FOV = 600;
 
-let camTargetX = 0;
-let camTargetY = 0;
-let camTargetZ = 0;
-let targetCamX = 0;
-let targetCamY = 0;
-let targetCamZ = 0;
+// Focus target in 3D
+let targetX = 0;
+let targetY = 0;
+let targetZ = 0;
+let currentTargetX = 0;
+let currentTargetY = 0;
+let currentTargetZ = 0;
 
 let isDragging = false;
 let lastMouseX = 0;
@@ -54,22 +57,19 @@ let lastMouseY = 0;
 let autoRotate = true;
 let pulseOffset = 0;
 
-const FOV = 650; // Perspective depth field
-
-// Color mapping by extension
 const TYPE_COLORS = {
-  py:   '#3572A5',
-  js:   '#f1e05a',
-  ts:   '#3178c6',
-  jsx:  '#61dafb',
-  tsx:  '#3178c6',
-  json: '#ff8800',
-  css:  '#c6538c',
-  html: '#e34c26',
-  md:   '#0885d7',
-  svg:  '#ff9900',
-  sh:   '#89e051',
-  ps1:  '#012456',
+  py:   '#38bdf8',
+  js:   '#facc15',
+  ts:   '#60a5fa',
+  jsx:  '#38bdf8',
+  tsx:  '#60a5fa',
+  json: '#fb923c',
+  css:  '#f472b6',
+  html: '#fb7185',
+  md:   '#a78bfa',
+  svg:  '#f59e0b',
+  sh:   '#4ade80',
+  ps1:  '#818cf8',
   other:'#94a3b8'
 };
 
@@ -82,7 +82,6 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-// Initial data request
 vscode.postMessage({ type: 'getGraphData' });
 
 window.addEventListener('message', event => {
@@ -91,35 +90,36 @@ window.addEventListener('message', event => {
     rawNodes = msg.nodes || [];
     rawEdges = msg.edges || [];
     buildGraph(rawNodes, rawEdges);
-    statsBadge.textContent = nodes.length + ' 3D nodes | ' + edges.length + ' links';
+    if (statsBadge) {
+      statsBadge.textContent = nodes.length + ' 3D nodes | ' + edges.length + ' links';
+    }
   }
 });
 
 function buildGraph(inNodes, inEdges) {
   const count = inNodes.length;
-  const radius = Math.max(160, Math.min(380, count * 22));
+  const radius = Math.max(140, Math.min(260, count * 15));
 
   nodes = inNodes.map((n, i) => {
     // Distribute on 3D Fibonacci sphere
     const phi = Math.acos(1 - 2 * (i + 0.5) / Math.max(1, count));
     const theta = Math.PI * (1 + Math.sqrt(5)) * (i + 0.5);
 
-    const r = radius * (0.65 + 0.35 * Math.sin(i * 1.5));
+    const r = radius * (0.7 + 0.3 * Math.sin(i * 1.3));
     const x = r * Math.sin(phi) * Math.cos(theta);
     const y = r * Math.sin(phi) * Math.sin(theta);
     const z = r * Math.cos(phi);
 
-    const baseRadius = Math.max(7, Math.min(16, 6 + (n.size ? Math.log10(n.size + 10) * 2.5 : 2)));
+    const baseRadius = Math.max(6, Math.min(13, 5 + (n.size ? Math.log10(n.size + 10) * 2 : 2)));
     return {
       ...n,
       x, y, z,
       baseRadius,
       color: TYPE_COLORS[n.ext] || TYPE_COLORS.other,
-      // Projected values (calculated per frame)
-      projX: 0,
-      projY: 0,
-      projRadius: baseRadius,
-      projZ: 0,
+      screenX: 0,
+      screenY: 0,
+      screenRadius: baseRadius,
+      depth: 0,
       visible: true
     };
   });
@@ -145,31 +145,31 @@ function buildGraph(inNodes, inEdges) {
 
 function resetCamera() {
   selectedNode = null;
-  targetCamX = 0;
-  targetCamY = 0;
-  targetCamZ = 0;
+  targetX = 0;
+  targetY = 0;
+  targetZ = 0;
   targetZoom = 1.0;
-  targetRotX = 0.35;
-  targetRotY = 0.45;
+  targetPitch = 0.25;
   autoRotate = true;
-  rotateToggleBtn.classList.add('active');
-  nodeInspector.style.display = 'none';
+  if (rotateToggleBtn) rotateToggleBtn.classList.add('active');
+  if (nodeInspector) nodeInspector.style.display = 'none';
 }
 
 function zoomToNode(node) {
   selectedNode = node;
   autoRotate = false;
-  rotateToggleBtn.classList.remove('active');
+  if (rotateToggleBtn) rotateToggleBtn.classList.remove('active');
 
-  targetCamX = node.x;
-  targetCamY = node.y;
-  targetCamZ = node.z;
-  targetZoom = 1.85;
+  targetX = node.x;
+  targetY = node.y;
+  targetZ = node.z;
+  targetZoom = 1.9;
 
   showInspector(node);
 }
 
 function showInspector(node) {
+  if (!nodeInspector) return;
   inspectorName.textContent = node.name;
   inspectorPath.textContent = node.path;
   inspectorType.textContent = (node.ext || 'file').toUpperCase();
@@ -179,27 +179,28 @@ function showInspector(node) {
   nodeInspector.style.display = 'flex';
 }
 
-inspectorClose.onclick = () => {
-  resetCamera();
-};
+if (inspectorClose) inspectorClose.onclick = resetCamera;
+if (askChatBtn) {
+  askChatBtn.onclick = () => {
+    if (selectedNode) {
+      vscode.postMessage({
+        type: 'sendExternalPrompt',
+        prompt: 'Explain the architecture and purpose of file `' + selectedNode.path + '` in this codebase.'
+      });
+    }
+  };
+}
 
-askChatBtn.onclick = () => {
-  if (selectedNode) {
-    vscode.postMessage({
-      type: 'sendExternalPrompt',
-      prompt: 'Explain the architecture and purpose of file `' + selectedNode.path + '` in this codebase.'
-    });
-  }
-};
-
-openFileBtn.onclick = () => {
-  if (selectedNode) {
-    vscode.postMessage({
-      type: 'openFile',
-      path: selectedNode.path
-    });
-  }
-};
+if (openFileBtn) {
+  openFileBtn.onclick = () => {
+    if (selectedNode) {
+      vscode.postMessage({
+        type: 'openFile',
+        path: selectedNode.path
+      });
+    }
+  };
+}
 
 if (openChatBtn) {
   openChatBtn.onclick = () => {
@@ -207,21 +208,19 @@ if (openChatBtn) {
   };
 }
 
-rotateToggleBtn.onclick = () => {
-  autoRotate = !autoRotate;
-  if (autoRotate) {
-    rotateToggleBtn.classList.add('active');
-  } else {
-    rotateToggleBtn.classList.remove('active');
-  }
-};
+if (rotateToggleBtn) {
+  rotateToggleBtn.onclick = () => {
+    autoRotate = !autoRotate;
+    rotateToggleBtn.classList.toggle('active', autoRotate);
+  };
+}
 
-fitBtn.onclick = resetCamera;
-zoomResetBtn.onclick = resetCamera;
-zoomInBtn.onclick = () => { targetZoom = Math.min(3.5, targetZoom * 1.3); };
-zoomOutBtn.onclick = () => { targetZoom = Math.max(0.4, targetZoom * 0.75); };
+if (fitBtn) fitBtn.onclick = resetCamera;
+if (zoomResetBtn) zoomResetBtn.onclick = resetCamera;
+if (zoomInBtn) zoomInBtn.onclick = () => { targetZoom = Math.min(3.2, targetZoom * 1.25); };
+if (zoomOutBtn) zoomOutBtn.onclick = () => { targetZoom = Math.max(0.4, targetZoom * 0.8); };
 
-// Mouse Interaction: 3D Drag Rotation & Click
+// Drag Interaction: Full 360 Spherical Rotation
 container.addEventListener('mousedown', (e) => {
   if (e.target !== canvas) return;
   isDragging = true;
@@ -229,7 +228,7 @@ container.addEventListener('mousedown', (e) => {
   lastMouseY = e.clientY;
 });
 
-window.addEventListener('mouseup', (e) => {
+window.addEventListener('mouseup', () => {
   isDragging = false;
 });
 
@@ -237,12 +236,11 @@ window.addEventListener('mousemove', (e) => {
   if (isDragging) {
     const dx = e.clientX - lastMouseX;
     const dy = e.clientY - lastMouseY;
-    targetRotY += dx * 0.007;
-    targetRotX -= dy * 0.007;
+    targetYaw += dx * 0.007;
+    targetPitch = Math.max(-1.42, Math.min(1.42, targetPitch + dy * 0.007));
     lastMouseX = e.clientX;
     lastMouseY = e.clientY;
   } else {
-    // Hover detection in 3D
     checkHover(e.clientX, e.clientY);
   }
 });
@@ -250,8 +248,8 @@ window.addEventListener('mousemove', (e) => {
 // Scroll to Zoom in 3D
 container.addEventListener('wheel', (e) => {
   e.preventDefault();
-  const zoomFactor = e.deltaY < 0 ? 1.15 : 0.88;
-  targetZoom = Math.max(0.3, Math.min(3.8, targetZoom * zoomFactor));
+  const factor = e.deltaY < 0 ? 1.12 : 0.89;
+  targetZoom = Math.max(0.4, Math.min(3.2, targetZoom * factor));
 }, { passive: false });
 
 // Click to focus node or reset
@@ -263,12 +261,11 @@ canvas.addEventListener('click', (e) => {
   let clicked = null;
   let minD = 9999;
 
-  // Search from front to back
   for (let i = nodes.length - 1; i >= 0; i--) {
     const n = nodes[i];
     if (!n.visible) continue;
-    const dist = Math.hypot(n.projX - mx, n.projY - my);
-    if (dist <= n.projRadius + 6 && dist < minD) {
+    const dist = Math.hypot(n.screenX - mx, n.screenY - my);
+    if (dist <= n.screenRadius + 6 && dist < minD) {
       clicked = n;
       minD = dist;
     }
@@ -291,8 +288,8 @@ function checkHover(clientX, clientY) {
   for (let i = nodes.length - 1; i >= 0; i--) {
     const n = nodes[i];
     if (!n.visible) continue;
-    const dist = Math.hypot(n.projX - mx, n.projY - my);
-    if (dist <= n.projRadius + 4 && dist < minD) {
+    const dist = Math.hypot(n.screenX - mx, n.screenY - my);
+    if (dist <= n.screenRadius + 4 && dist < minD) {
       found = n;
       minD = dist;
     }
@@ -301,15 +298,17 @@ function checkHover(clientX, clientY) {
   canvas.style.cursor = found ? 'pointer' : 'grab';
 }
 
-// Search and filter
-searchInput.addEventListener('input', () => {
-  const term = searchInput.value.toLowerCase().trim();
-  applyFilters(term, filterType.value);
-});
+if (searchInput) {
+  searchInput.addEventListener('input', () => {
+    applyFilters(searchInput.value.toLowerCase().trim(), filterType ? filterType.value : 'all');
+  });
+}
 
-filterType.addEventListener('change', () => {
-  applyFilters(searchInput.value.toLowerCase().trim(), filterType.value);
-});
+if (filterType) {
+  filterType.addEventListener('change', () => {
+    applyFilters(searchInput ? searchInput.value.toLowerCase().trim() : '', filterType.value);
+  });
+}
 
 function applyFilters(term, type) {
   nodes.forEach(n => {
@@ -324,92 +323,117 @@ function applyFilters(term, type) {
   });
 }
 
-// 3D Rendering & Animation Loop
+// 3D Orbital Projection Function
+function project3D(wx, wy, wz, cx, cy, distance) {
+  // Camera Position in spherical coords around focus target
+  const camX = distance * Math.cos(pitch) * Math.sin(yaw) + currentTargetX;
+  const camY = distance * Math.sin(pitch) + currentTargetY;
+  const camZ = distance * Math.cos(pitch) * Math.cos(yaw) + currentTargetZ;
+
+  // Forward unit vector from camera toward focus target
+  const fx = currentTargetX - camX;
+  const fy = currentTargetY - camY;
+  const fz = currentTargetZ - camZ;
+  const flen = Math.hypot(fx, fy, fz) || 1;
+  const nfx = fx / flen;
+  const nfy = fy / flen;
+  const nfz = fz / flen;
+
+  // Right unit vector = cross(forward, world_up=(0,1,0))
+  let rx = nfz;
+  let rz = -nfx;
+  const rlen = Math.hypot(rx, rz) || 1;
+  rx /= rlen;
+  rz /= rlen;
+
+  // Up unit vector = cross(right, forward)
+  const ux = -rz * nfy;
+  const uy = rz * nfx - rx * nfz;
+  const uz = rx * nfy;
+
+  // Vector from camera to world point
+  const dx = wx - camX;
+  const dy = wy - camY;
+  const dz = wz - camZ;
+
+  // View-space coordinates
+  const vx = dx * rx + dz * rz;
+  const vy = dx * ux + dy * uy + dz * uz;
+  const vz = dx * nfx + dy * nfy + dz * nfz;
+
+  if (vz <= 15) return null; // Behind camera plane
+
+  const scale = FOV / vz;
+  return {
+    px: cx + vx * scale,
+    py: cy - vy * scale,
+    scale: scale,
+    depth: vz
+  };
+}
+
+// Main 3D Render Loop
 function animate() {
   requestAnimationFrame(animate);
 
-  // Smooth interpolation for rotation & camera
+  // Smooth continuous ambient rotation
   if (autoRotate && !isDragging) {
-    targetRotY += 0.0035;
+    targetYaw += 0.003;
   }
-  rotX += (targetRotX - rotX) * 0.08;
-  rotY += (targetRotY - rotY) * 0.08;
-  zoom += (targetZoom - zoom) * 0.08;
 
-  camTargetX += (targetCamX - camTargetX) * 0.08;
-  camTargetY += (targetCamY - camTargetY) * 0.08;
-  camTargetZ += (targetCamZ - camTargetZ) * 0.08;
+  yaw += (targetYaw - yaw) * 0.09;
+  pitch += (targetPitch - pitch) * 0.09;
+  zoom += (targetZoom - zoom) * 0.09;
 
-  pulseOffset = (pulseOffset + 0.015) % 1;
+  currentTargetX += (targetX - currentTargetX) * 0.09;
+  currentTargetY += (targetY - currentTargetY) * 0.09;
+  currentTargetZ += (targetZ - currentTargetZ) * 0.09;
+
+  pulseOffset = (pulseOffset + 0.018) % 1;
 
   render3D();
 }
 requestAnimationFrame(animate);
-
-function project3D(x, y, z, cx, cy) {
-  // Translate relative to camera target
-  const tx = (x - camTargetX) * zoom;
-  const ty = (y - camTargetY) * zoom;
-  const tz = (z - camTargetZ) * zoom;
-
-  // Rotate around Y
-  const cosY = Math.cos(rotY);
-  const sinY = Math.sin(rotY);
-  const x1 = tx * cosY + tz * sinY;
-  const z1 = -tx * sinY + tz * cosY;
-
-  // Rotate around X
-  const cosX = Math.cos(rotX);
-  const sinX = Math.sin(rotX);
-  const y2 = ty * cosX - z1 * sinX;
-  const z2 = ty * sinX + z1 * cosX;
-
-  const depth = z2 + FOV;
-  if (depth <= 10) return null; // Behind camera
-
-  const scale = FOV / depth;
-  return {
-    px: cx + x1 * scale,
-    py: cy + y2 * scale,
-    scale: scale,
-    depth: z2
-  };
-}
 
 function render3D() {
   const w = container.clientWidth;
   const h = container.clientHeight;
   const cx = w / 2;
   const cy = h / 2;
+  const distance = BASE_DISTANCE / zoom;
 
   ctx.clearRect(0, 0, w, h);
 
-  // Background subtle cosmic grid / rings
-  drawBackgroundAmbience(cx, cy);
+  // Background subtle dark radial ambience
+  const bgGrad = ctx.createRadialGradient(cx, cy, 40, cx, cy, Math.max(w, h) * 0.7);
+  bgGrad.addColorStop(0, 'rgba(255, 85, 0, 0.04)');
+  bgGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, w, h);
 
   // Project all visible nodes
   const projectedNodes = [];
   nodes.forEach(n => {
     if (!n.visible) return;
-    const proj = project3D(n.x, n.y, n.z, cx, cy);
+    const proj = project3D(n.x, n.y, n.z, cx, cy, distance);
     if (proj) {
-      n.projX = proj.px;
-      n.projY = proj.py;
-      n.projRadius = Math.max(3, n.baseRadius * proj.scale * zoom);
-      n.projZ = proj.depth;
+      n.screenX = proj.px;
+      n.screenY = proj.py;
+      n.screenRadius = Math.max(3, n.baseRadius * proj.scale);
+      n.depth = proj.depth;
       projectedNodes.push(n);
     }
   });
 
-  // Sort back-to-front by 3D depth for true depth rendering
-  projectedNodes.sort((a, b) => b.projZ - a.projZ);
+  // True depth sorting (back to front)
+  projectedNodes.sort((a, b) => b.depth - a.depth);
 
   // Draw 3D Edges
   edges.forEach(e => {
     if (!e.source.visible || !e.target.visible) return;
 
-    const p1 = project3D(e.source.x, e.source.y, e.source.z, cx, cy);
-    const p2 = project3D(e.target.x, e.target.y, e.target.z, cx, cy);
+    const p1 = project3D(e.source.x, e.source.y, e.source.z, cx, cy, distance);
+    const p2 = project3D(e.target.x, e.target.y, e.target.z, cx, cy, distance);
     if (!p1 || !p2) return;
 
     const isConnectedToSelected = selectedNode && (e.source === selectedNode || e.target === selectedNode);
@@ -421,86 +445,76 @@ function render3D() {
 
     if (isConnectedToSelected) {
       ctx.strokeStyle = '#ff5500';
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 2.2;
       ctx.shadowColor = '#ff5500';
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 8;
     } else if (isConnectedToHovered) {
       ctx.strokeStyle = '#ffaa00';
-      ctx.lineWidth = 1.8;
+      ctx.lineWidth = 1.6;
       ctx.shadowBlur = 0;
     } else {
-      const alpha = Math.max(0.08, Math.min(0.35, (p1.scale + p2.scale) * 0.15));
-      ctx.strokeStyle = `rgba(255, 120, 50, ${alpha})`;
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(255, 120, 50, 0.16)';
+      ctx.lineWidth = 0.9;
       ctx.shadowBlur = 0;
     }
     ctx.stroke();
     ctx.shadowBlur = 0;
 
-    // Animated traveling pulse particles along active links
+    // Moving signal pulse along connected edges
     if (isConnectedToSelected || isConnectedToHovered) {
       const pulseX = p1.px + (p2.px - p1.px) * pulseOffset;
       const pulseY = p1.py + (p2.py - p1.py) * pulseOffset;
       ctx.beginPath();
-      ctx.arc(pulseX, pulseY, 3, 0, Math.PI * 2);
+      ctx.arc(pulseX, pulseY, 2.8, 0, Math.PI * 2);
       ctx.fillStyle = '#ffffff';
       ctx.shadowColor = '#ff8800';
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 6;
       ctx.fill();
       ctx.shadowBlur = 0;
     }
   });
 
-  // Draw 3D Nodes as glowing spheres
+  // Draw 3D Nodes
   projectedNodes.forEach(n => {
     const isSelected = (n === selectedNode);
     const isHovered = (n === hoveredNode);
 
-    // Node outer glow / aura
+    // Glowing halo on select/hover
     if (isSelected || isHovered) {
       ctx.beginPath();
-      ctx.arc(n.projX, n.projY, n.projRadius + (isSelected ? 7 : 4), 0, Math.PI * 2);
+      ctx.arc(n.screenX, n.screenY, n.screenRadius + (isSelected ? 6 : 3.5), 0, Math.PI * 2);
       ctx.strokeStyle = isSelected ? '#ff5500' : '#ffaa00';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.8;
       ctx.shadowColor = isSelected ? '#ff5500' : '#ffaa00';
-      ctx.shadowBlur = 14;
+      ctx.shadowBlur = 12;
       ctx.stroke();
       ctx.shadowBlur = 0;
     }
 
-    // Sphere fill with 3D radial gradient
+    // 3D Sphere Shading
     const grad = ctx.createRadialGradient(
-      n.projX - n.projRadius * 0.35,
-      n.projY - n.projRadius * 0.35,
-      n.projRadius * 0.1,
-      n.projX,
-      n.projY,
-      n.projRadius
+      n.screenX - n.screenRadius * 0.35,
+      n.screenY - n.screenRadius * 0.35,
+      n.screenRadius * 0.08,
+      n.screenX,
+      n.screenY,
+      n.screenRadius
     );
     grad.addColorStop(0, '#ffffff');
-    grad.addColorStop(0.3, n.color);
-    grad.addColorStop(1, '#05070d');
+    grad.addColorStop(0.35, n.color);
+    grad.addColorStop(1, '#060810');
 
     ctx.beginPath();
-    ctx.arc(n.projX, n.projY, n.projRadius, 0, Math.PI * 2);
+    ctx.arc(n.screenX, n.screenY, n.screenRadius, 0, Math.PI * 2);
     ctx.fillStyle = grad;
     ctx.fill();
 
-    // Node label (visible on hover, select, or when camera is close)
-    if (isSelected || isHovered || n.projRadius > 8) {
-      ctx.font = (isSelected ? 'bold 11px' : '10px') + ' -apple-system, sans-serif';
+    // Node Name Tag
+    if (isSelected || isHovered || n.screenRadius > 8) {
+      ctx.font = (isSelected ? '600 11px' : '10px') + ' -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillStyle = isSelected ? '#ffaa00' : (isHovered ? '#ffffff' : '#cbd5e1');
-      ctx.fillText(n.name, n.projX, n.projY + n.projRadius + 12);
+      ctx.fillStyle = isSelected ? '#ffaa00' : (isHovered ? '#ffffff' : '#94a3b8');
+      ctx.fillText(n.name, n.screenX, n.screenY + n.screenRadius + 11);
     }
   });
-}
-
-function drawBackgroundAmbience(cx, cy) {
-  // Ambient radial glow in center
-  const bgGrad = ctx.createRadialGradient(cx, cy, 50, cx, cy, 450);
-  bgGrad.addColorStop(0, 'rgba(255, 85, 0, 0.05)');
-  bgGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-  ctx.fillStyle = bgGrad;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
 }

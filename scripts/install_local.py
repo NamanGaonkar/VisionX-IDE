@@ -14,7 +14,7 @@ EXE_PATH = INSTALL_DIR / "VisionX.exe"
 BIN_PATH = INSTALL_DIR / "bin"
 
 print("==================================================")
-print("     VisionX IDE - Local Windows Re-installer     ")
+print("     VisionX IDE v1.6.0 - Local Windows Re-installer ")
 print("==================================================")
 
 if not DIST_DIR.exists():
@@ -35,7 +35,7 @@ if INSTALL_DIR.exists():
         print(f"Note during cleanup: {e}")
 
 INSTALL_DIR.mkdir(parents=True, exist_ok=True)
-print("Copying fresh VisionX v1.5.0 binaries...")
+print("Copying fresh VisionX v1.6.0 binaries...")
 shutil.copytree(DIST_DIR, INSTALL_DIR, dirs_exist_ok=True)
 print("Binaries copied successfully.")
 
@@ -79,21 +79,22 @@ print("Migrating Visual Studio Code settings and extensions to VisionX...")
 appdata = Path(os.environ.get("APPDATA", ""))
 userprofile = Path(os.environ.get("USERPROFILE", ""))
 vscode_user = appdata / "Code" / "User"
-visionx_user = appdata / "VisionX" / "User"
+visionx_user_targets = [appdata / "VisionX" / "User", appdata / ".visionx" / "User"]
 vscode_ext = userprofile / ".vscode" / "extensions"
 visionx_ext = userprofile / ".visionx" / "extensions"
 
 if vscode_user.exists():
-    visionx_user.mkdir(parents=True, exist_ok=True)
-    for fname in ["settings.json", "keybindings.json", "mcp.json", "chatLanguageModels.json"]:
-        src = vscode_user / fname
-        dest = visionx_user / fname
-        if src.exists():
-            shutil.copy2(src, dest)
-    snip_src = vscode_user / "snippets"
-    if snip_src.exists():
-        shutil.copytree(snip_src, visionx_user / "snippets", dirs_exist_ok=True)
-    print("Migrated settings, keybindings, and snippets from VS Code.")
+    for target_user in visionx_user_targets:
+        target_user.mkdir(parents=True, exist_ok=True)
+        for fname in ["settings.json", "keybindings.json", "mcp.json", "chatLanguageModels.json"]:
+            src = vscode_user / fname
+            dest = target_user / fname
+            if src.exists():
+                shutil.copy2(src, dest)
+        snip_src = vscode_user / "snippets"
+        if snip_src.exists():
+            shutil.copytree(snip_src, target_user / "snippets", dirs_exist_ok=True)
+    print("Migrated settings, keybindings, and snippets from VS Code to VisionX user profiles.")
 
 if vscode_ext.exists():
     visionx_ext.mkdir(parents=True, exist_ok=True)
@@ -111,5 +112,5 @@ if vscode_ext.exists():
     print(f"Migrated and linked {linked_exts} extensions from VS Code.")
 
 print("==================================================")
-print(" VisionX IDE v1.4.0 Installed Locally!            ")
+print(" VisionX IDE v1.6.0 Installed Locally!            ")
 print("==================================================")

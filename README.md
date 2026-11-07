@@ -6,49 +6,40 @@
 ### Autonomous AI and Spatial Developer Workspace
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://opensource.org/licenses/MIT)
-[![Release: v1.5.0](https://img.shields.io/badge/Release-v1.5.0-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.5.0)
+[![Release: v1.6.0](https://img.shields.io/badge/Release-v1.6.0-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.6.0)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-red.svg)]()
-[![Aesthetics](https://img.shields.io/badge/Aesthetics-Liquid%20Glass-ff5500.svg)]()
+[![Aesthetics](https://img.shields.io/badge/Aesthetics-Solid%20Obsidian-ff5500.svg)]()
 [![AI Engine](https://img.shields.io/badge/AI%20Core-BYOK%20Dynamic%20Discovery-ffd700.svg)]()
 [![Extensions](https://img.shields.io/badge/Extensions-Open%20VSX-blue.svg)](https://open-vsx.org/)
 
-VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a symmetrical Liquid Glass interface, native Bring-Your-Own-Key (BYOK) dynamic AI model discovery, interactive 2D project architecture dependency visualization, macOS-style window controls, and full compatibility with the Open VSX extension ecosystem.
+VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a solid dark obsidian interface, native Bring-Your-Own-Key (BYOK) dynamic AI model discovery, an interactive 360-degree orbital 3D project architecture graph, macOS-style traffic light window controls, and full compatibility with the Open VSX extension ecosystem.
 
 </div>
 
 ---
 
-## What is New in v1.5.0
+## What is New in v1.6.0
 
-- Frosted Glass Acrylic Workbench: Full Windows 11 DWM Acrylic / backdrop-filter blur integration across all workbench layers (editor, sidebar, activity bar, panel, title bar) allowing the desktop background to show through with a true frosted glass aesthetic.
-- Ollama Online and Remote Cloud API Support: Native Node-level provider execution eliminating browser webview CORS boundaries. Full support for local instances (`http://localhost:11434`), remote Ollama instances, reverse proxies, and token-authenticated cloud endpoints.
-- High-Precision Traffic Light Window Controls: Red (Close), Yellow (Minimize), and Green (Maximize) pure circular window buttons matching desktop reference design without inner glyphs or borders bleeding.
-- Universal BYOK Model Scanner: Scan and auto-recognize models across any endpoint (Ollama Online/Local, OpenRouter, Anthropic Claude, OpenAI, Google Gemini, DeepSeek, Groq, xAI Grok, Mistral, Together, Perplexity, and custom OpenAI-compatible proxies).
-- Enhanced Multi-Session Chat & Context Transfer: Seamless one-click code insertion, clipboard integration, image uploads, and active workspace file context streaming.
-
----
-
-## What is New in v1.4.0
-
-- Direct Titlebar Chat Toggle: Chat toggle button is integrated directly into the top Command Center title bar beside search, giving instantaneous one-click access anywhere in the IDE.
-- 2D Project Architecture Graph: Interactive dependency visualizer that scans project files, maps out cross-file imports and relations, supports pan/zoom, node dragging, file inspection, and one-click context transfer directly into VisionX Chat.
-- Native Multi-Session Management: Manage multiple distinct conversation threads in Chat with session switching, persistence across restarts, and thread deletion.
-- macOS-Style Traffic Light Controls: Sleek circular window controls (Red close, Yellow minimize, Green maximize) with smooth hover scaling and glow effects.
-- Agent Window and Setup Dialog Branding: Rebranded the Agent ("Sessions") window and setup dialogs with the official glowing VisionX logo, replacing legacy ribbon/bracket glyphs and removing third-party editor strings across OAuth and title bars.
-- Zero Modification Warnings: Fully verified internal digests and suppressed false tamper notifications for a clean, warning-free launch experience.
+- 360-Degree Orbital 3D Project Architecture Graph: Replaced flat 2D layout with a full 3D orbital space graph. Features spherical coordinate camera rotation (yaw 360 degrees, pitch clamping, zoom), force-directed node positioning, real-time node dragging, inspector cards, and direct context streaming into VisionX Chat.
+- Solid Dark Obsidian Theme: Eliminated transparent/acrylic desktop wallpaper pass-through in favor of rich, opaque dark obsidian surfaces (#07090e, #0a0d14, #0c0f18) with subtle 1px structural borders and crisp contrast.
+- Minimalist Copilot Chat UI: Streamlined chat interface stripping away bloated prompt chips and mode pills. Restored clean typography, compact message bubbles, an integrated model selector pill, and a focused message composer.
+- Permanent Integrity Protection: Neutralized false "installation appears to be corrupt" prompts by bypassing internal checksum validation in the engine.
+- Enhanced Ollama Online and Remote Cloud API Support: Native Node-level provider execution eliminating browser webview CORS boundaries. Full support for local instances (`http://localhost:11434`), remote Ollama instances, reverse proxies, and token-authenticated cloud endpoints.
+- High-Precision macOS Window Controls: Red (Close), Yellow (Minimize), and Green (Maximize) circular controls cleanly ordered and styled across all titlebar contexts.
 
 ---
 
 ## Features
 
-### Liquid Glass Interface and Theme Compatibility
-- Deep dark liquid glass shell with obsidian surfaces and warm amber accents.
+### Solid Obsidian Interface and Theme Compatibility
+- Deep dark obsidian shell with rich background surfaces and amber accents.
 - macOS-style traffic light window controls: Red (close), Yellow (minimize), Green (maximize).
 - Full theme interoperability: Switching between light, dark, and high-contrast color themes applies dynamically across the entire window, title bar, sidebars, activity bar, and editor tabs.
-- Symmetrical rounded geometry, non-bleeding solid title bar, and smooth tab transitions.
+- Symmetrical rounded geometry, solid non-bleeding title bar, and clean tab transitions.
 
-### 2D Project Architecture and Dependency Graph
-- Interactive physics-simulated node graph mapping workspace files and cross-file dependencies.
+### 360-Degree Orbital 3D Project Architecture Graph
+- Physics-simulated 3D orbital node graph mapping workspace files and cross-file dependencies.
+- Full 360-degree rotation with mouse drag, mouse wheel zooming, and reset view controls.
 - Visual file-type color coding (Python, JavaScript, TypeScript, JSON, CSS, Markdown, etc.).
 - Search and filter files by name and type.
 - Floating inspector card with file metadata, outgoing imports, and incoming references.
@@ -79,7 +70,7 @@ VisionX is a high-velocity code editor and developer workspace built on an open-
 ## Installation and Quick Start
 
 ### Standalone Release (Windows x64)
-1. Download the latest release archive (`VisionX-Windows-x64-v1.5.0.zip`) from the Releases section.
+1. Download the latest release archive (`VisionX-Windows-x64-v1.6.0.zip`) from the Releases section.
 2. Extract the archive to your preferred folder.
 3. Run `VisionX.exe`.
 
@@ -104,37 +95,29 @@ visionx .
 
 ---
 
-## Configuration
+## Technical Specifications
 
-### Configuring BYOK AI Models
-1. Launch VisionX.
-2. Open the Chat panel from the top Command Center button or Activity Bar on the left.
-3. Click the model pill in the input bar or open settings.
-4. Select your provider (OpenRouter, OpenAI, Anthropic, Gemini, DeepSeek, Groq, Ollama, etc.).
-5. Paste your API key. Authorized models are discovered and populated automatically.
+| Component | Technology |
+|---|---|
+| Engine Base | Code-OSS v1.96.2 / Electron v32.2.6 / Chromium v128 / Node.js v20.18.1 |
+| Architecture | Windows x64 (PE32+ executable, custom icon, branded manifest) |
+| AI Integration | BYOK Multi-Provider Engine (Local Ollama, Remote Ollama, OpenRouter, Anthropic, Gemini, OpenAI, DeepSeek, Groq, Mistral) |
+| Spatial Graph | 3D Canvas Orbital Physics Engine with 360-Degree Spherical Viewport |
+| Custom Theme | Solid Dark Obsidian Design System |
+| Extension API | VS Code Extension API v1.96.2 + Open VSX Marketplace |
 
 ---
 
-## Repository Structure
+## Verification and Security
 
-```
-VisionX-IDE/
-├── build/                 # Prebuilt engine assets and multi-resolution icons
-│   └── icons/             # visionx.ico and high-resolution icons
-├── src/
-│   ├── branding/          # Official VisionX identity vector assets
-│   ├── theme/             # VisionX Liquid Glass theme extension
-│   └── ai-assistant/      # VisionX Chat & 2D Project Architecture extension
-├── scripts/
-│   ├── build_visionx.py   # Assembles dist, patches product.json, injects CSS, sets PE icons
-│   ├── install_local.py   # Installs to AppData, creates shortcuts, registers PATH
-│   └── package_release.py # Packages standalone Windows release archive
-├── logo.png               # Official high-resolution VisionX identity logo
-└── README.md
+VisionX produces clean executables with no adware or background telemetry:
+
+```powershell
+Get-FileHash -Algorithm SHA256 "dist\VisionX-Windows-x64-v1.6.0.zip"
 ```
 
 ---
 
 ## License
-This project is open-source software licensed under the [MIT License](LICENSE).
-Code-OSS engine copyright respective contributors. Custom branding, Liquid Glass Theme, VisionX Chat, and Project Architecture Graph are maintained by the VisionX Contributors.
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

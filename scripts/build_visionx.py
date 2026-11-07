@@ -17,7 +17,7 @@ ICON_PATH = BUILD_DIR / "icons" / "visionx.ico"
 LOGO_SVG_PATH = BASE_DIR / "src" / "branding" / "visionx-logo.svg"
 
 print("==================================================")
-print("     VisionX IDE v1.5.0 - Engine Rebuild & Polish ")
+print("     VisionX IDE v1.6.0 - Engine Rebuild & Polish ")
 print("==================================================")
 
 # 1. Clean and extract
@@ -68,10 +68,12 @@ if product_json_path.exists():
     product["win32AppUserModelId"] = "VisionX.VisionXIDE"
     product["win32MutexName"] = "visionx"
     product["urlProtocol"] = "visionx"
-    product["dataFolderName"] = ".visionx"
+    product["dataFolderName"] = "VisionX"
     product["serverApplicationName"] = "visionx-server"
     product["reportIssueUrl"] = "https://github.com/NamanGaonkar/VisionX-IDE/issues"
     product["licenseUrl"] = "https://github.com/NamanGaonkar/VisionX-IDE/blob/main/LICENSE"
+    product["checksums"] = {}
+    product["checksumFailMoreInfoUrl"] = ""
     
     product["extensionsGallery"] = {
         "serviceUrl": "https://marketplace.visualstudio.com/_apis/public/gallery",
@@ -154,18 +156,6 @@ if ext_dir.exists():
         shutil.rmtree(target_ai)
     shutil.copytree(BASE_DIR / "src" / "ai-assistant", target_ai)
 
-# 7b. Patch mainImpl.js for Windows 11 DWM Acrylic Frosted Glass
-main_impl = VISIONX_DIST / "resources" / "app" / "out" / "mainImpl.js"
-if main_impl.exists():
-    print("Patching mainImpl.js for Windows 11 Acrylic frosted glass vibrancy...")
-    txt = main_impl.read_text(encoding="utf-8", errors="ignore")
-    target_dc = 'c={backgroundColor:r.getBackgroundColor(),'
-    replacement_dc = 'c={backgroundColor:"#00000000",backgroundMaterial:"acrylic",vibrancy:"fullscreen-ui",'
-    if target_dc in txt:
-        txt = txt.replace(target_dc, replacement_dc)
-        main_impl.write_text(txt, encoding="utf-8")
-        print("Successfully enabled acrylic backgroundMaterial in BrowserWindow options.")
-
 # 8. macOS-Style Traffic Light Window Controls CSS matching uploaded image
 traffic_light_css = """
 /* ======================================================== */
@@ -173,9 +163,11 @@ traffic_light_css = """
 /* Red (Close) -> Yellow (Minimize) -> Green (Maximize)     */
 /* Strictly matching user reference: pure circles, no icons */
 /* ======================================================== */
+.window-controls-container,
 .monaco-workbench .part.titlebar .window-controls-container,
 .monaco-workbench .titlebar-right .window-controls-container {
   display: flex !important;
+  flex-direction: row !important;
   align-items: center !important;
   justify-content: flex-end !important;
   gap: 8px !important;
@@ -186,8 +178,12 @@ traffic_light_css = """
   -webkit-app-region: no-drag !important;
 }
 
+.window-controls-container > .window-icon,
 .monaco-workbench .part.titlebar .window-controls-container > .window-icon,
-.monaco-workbench .titlebar-right .window-controls-container > .window-icon {
+.monaco-workbench .titlebar-right .window-controls-container > .window-icon,
+.window-icon.window-minimize,
+.window-icon.window-max-restore,
+.window-icon.window-close {
   width: 12px !important;
   height: 12px !important;
   min-width: 12px !important;
@@ -203,61 +199,73 @@ traffic_light_css = """
   cursor: pointer !important;
   display: inline-block !important;
   box-sizing: border-box !important;
+  -webkit-app-region: no-drag !important;
   transition: transform 0.15s ease, filter 0.15s ease !important;
 }
 
 /* Remove any default Windows icons or glyphs inside circles */
+.window-controls-container > .window-icon::before,
+.window-controls-container > .window-icon::after,
 .monaco-workbench .part.titlebar .window-controls-container > .window-icon::before,
 .monaco-workbench .part.titlebar .window-controls-container > .window-icon::after,
 .monaco-workbench .titlebar-right .window-controls-container > .window-icon::before,
-.monaco-workbench .titlebar-right .window-controls-container > .window-icon::after {
+.monaco-workbench .titlebar-right .window-controls-container > .window-icon::after,
+.window-icon.window-minimize::before,
+.window-icon.window-minimize::after,
+.window-icon.window-max-restore::before,
+.window-icon.window-max-restore::after,
+.window-icon.window-close::before,
+.window-icon.window-close::after {
   content: "" !important;
   display: none !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
-/* Red (Close) on Left */
-.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-close,
-.monaco-workbench .titlebar-right .window-controls-container > .window-icon.window-close {
+/* Red (Close) */
+.window-controls-container > .window-icon.window-close,
+.window-icon.window-close {
   order: 1 !important;
   background-color: #ff5f56 !important;
   border: 1px solid #e0443e !important;
   box-shadow: 0 0 3px rgba(255, 95, 86, 0.4) !important;
 }
-.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-close:hover,
-.monaco-workbench .titlebar-right .window-controls-container > .window-icon.window-close:hover {
+.window-controls-container > .window-icon.window-close:hover,
+.window-icon.window-close:hover {
   background-color: #ff3b30 !important;
   filter: brightness(1.15) !important;
-  transform: scale(1.12) !important;
+  transform: scale(1.15) !important;
 }
 
-/* Yellow (Minimize) in Middle */
-.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-minimize,
-.monaco-workbench .titlebar-right .window-controls-container > .window-icon.window-minimize {
+/* Yellow (Minimize) */
+.window-controls-container > .window-icon.window-minimize,
+.window-icon.window-minimize {
   order: 2 !important;
   background-color: #ffbd2e !important;
   border: 1px solid #dea123 !important;
   box-shadow: 0 0 3px rgba(255, 189, 46, 0.4) !important;
 }
-.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-minimize:hover,
-.monaco-workbench .titlebar-right .window-controls-container > .window-icon.window-minimize:hover {
+.window-controls-container > .window-icon.window-minimize:hover,
+.window-icon.window-minimize:hover {
   background-color: #ffaa00 !important;
   filter: brightness(1.15) !important;
-  transform: scale(1.12) !important;
+  transform: scale(1.15) !important;
 }
 
-/* Green (Maximize / Restore) on Right */
-.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-max-restore,
-.monaco-workbench .titlebar-right .window-controls-container > .window-icon.window-max-restore {
+/* Green (Maximize / Restore) */
+.window-controls-container > .window-icon.window-max-restore,
+.window-icon.window-max-restore {
   order: 3 !important;
   background-color: #27c93f !important;
   border: 1px solid #1aab29 !important;
   box-shadow: 0 0 3px rgba(39, 201, 63, 0.4) !important;
 }
-.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-max-restore:hover,
-.monaco-workbench .titlebar-right .window-controls-container > .window-icon.window-max-restore:hover {
+.window-controls-container > .window-icon.window-max-restore:hover,
+.window-icon.window-max-restore:hover {
   background-color: #20b034 !important;
   filter: brightness(1.15) !important;
-  transform: scale(1.12) !important;
+  transform: scale(1.15) !important;
 }
 """
 
@@ -270,6 +278,9 @@ agent_branding_css = f"""
 .chat-setup-dialog .dialog-message-row > .dialog-icon,
 .sessions-welcome-dialog .dialog-icon,
 .sessions-main-welcome-dialog .dialog-icon,
+.sessions-sign-in-dialog .dialog-icon,
+.sessions-sign-in-dialog-message-row > .dialog-icon,
+.monaco-dialog-box .dialog-icon,
 .dialog-icon.codicon-agent {{
   background-image: url("{logo_b64_url}") !important;
   background-size: contain !important;
@@ -289,6 +300,8 @@ agent_branding_css = f"""
 .chat-setup-dialog .dialog-message-row > .dialog-icon::before,
 .sessions-welcome-dialog .dialog-icon::before,
 .sessions-main-welcome-dialog .dialog-icon::before,
+.sessions-sign-in-dialog .dialog-icon::before,
+.monaco-dialog-box .dialog-icon::before,
 .dialog-icon.codicon-agent::before {{
   content: "" !important;
   display: none !important;
@@ -313,19 +326,16 @@ agent_branding_css = f"""
 
 glass_css = """
 /* ======================================================== */
-/* VisionX Frosted Glass Liquid Workbench Aesthetics        */
-/* Translucent acrylic layers with background wallpaper blur*/
+/* VisionX Solid Dark Obsidian Workbench Aesthetics        */
+/* Sleek, distraction-free obsidian theme                   */
 /* ======================================================== */
 
 html, body, .monaco-workbench {
-  background-color: transparent !important;
-  background: transparent !important;
+  background-color: #07090e !important;
 }
 
 .monaco-workbench .part.titlebar {
-  background-color: rgba(8, 10, 16, 0.72) !important;
-  backdrop-filter: blur(28px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  background-color: #0c0f18 !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
   height: 38px !important;
   z-index: 100 !important;
@@ -346,28 +356,25 @@ html, body, .monaco-workbench {
 
 .monaco-workbench .part.titlebar .menubar .menubar-menu-button:hover,
 .monaco-workbench .part.titlebar .menubar .menubar-menu-button.open {
-  background: rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
 }
 
 /* Rounded Symmetrical Search Command Center */
 .monaco-workbench .part.titlebar .command-center {
   border-radius: 8px !important;
-  background: rgba(255, 255, 255, 0.07) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  backdrop-filter: blur(12px) !important;
+  background: #121624 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
   transition: all 0.2s ease !important;
 }
 
 .monaco-workbench .part.titlebar .command-center:hover {
   border-color: #ff5500 !important;
-  background: rgba(255, 255, 255, 0.10) !important;
+  background: #171c2e !important;
 }
 
-/* Activity Bar: Frosted Acrylic Pill Container */
+/* Activity Bar */
 .monaco-workbench .part.activitybar {
-  background-color: rgba(6, 8, 14, 0.68) !important;
-  backdrop-filter: blur(28px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  background-color: #090b12 !important;
   border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
@@ -376,64 +383,49 @@ html, body, .monaco-workbench {
   margin: 4px 2px !important;
 }
 
-/* Sidebar: Frosted Acrylic Translucent Panel */
+/* Sidebar */
 .monaco-workbench .part.sidebar {
-  background-color: rgba(8, 10, 18, 0.65) !important;
-  backdrop-filter: blur(28px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  background-color: #0a0d14 !important;
   border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
-/* Editor: Semi-Translucent with Acrylic Pass-Through */
+/* Editor */
 .monaco-workbench .part.editor {
-  background-color: rgba(10, 12, 22, 0.58) !important;
-  backdrop-filter: blur(28px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  background-color: #07090e !important;
 }
 
 .monaco-workbench .part.editor > .content .editor-group-container {
-  background-color: transparent !important;
+  background-color: #07090e !important;
 }
 
 .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container {
-  background-color: rgba(8, 10, 18, 0.60) !important;
+  background-color: #0a0d14 !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
 /* Rounded Symmetrical Editor Tabs */
 .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab {
-  border-radius: 8px 8px 0 0 !important;
+  border-radius: 6px 6px 0 0 !important;
   margin: 2px 2px 0 2px !important;
   border-right: none !important;
   transition: all 0.15s ease !important;
-  background-color: rgba(14, 18, 30, 0.50) !important;
+  background-color: #0c0f18 !important;
 }
 
 .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab.active {
-  background-color: rgba(22, 28, 48, 0.75) !important;
+  background-color: #121624 !important;
   border-bottom: 2px solid #ff5500 !important;
 }
 
-/* Monaco Code Editor Translucency */
-.monaco-editor,
-.monaco-editor .overflow-guard,
-.monaco-editor-background {
-  background-color: transparent !important;
-}
-
-/* Bottom Panel: Frosted Acrylic */
+/* Bottom Panel */
 .monaco-workbench .part.panel {
-  background-color: rgba(6, 8, 14, 0.70) !important;
-  backdrop-filter: blur(28px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  background-color: #090b12 !important;
   border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
-/* Status Bar: Clean Translucent Footer */
+/* Status Bar */
 .monaco-workbench .part.statusbar {
-  background-color: rgba(6, 8, 14, 0.78) !important;
-  backdrop-filter: blur(28px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  background-color: #07090e !important;
   border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
@@ -444,8 +436,8 @@ html, body, .monaco-workbench {
   border-radius: 10px !important;
   overflow: hidden !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45) !important;
-  backdrop-filter: blur(24px) saturate(160%) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5) !important;
+  background-color: #0e121e !important;
 }
 
 /* Rounded Sleek Scrollbars */
@@ -556,7 +548,7 @@ if ms_auth_js.exists():
     ms_auth_js.write_text(txt, encoding="utf-8")
     print("Rebranded microsoft-authentication extension.js")
 
-# 8c. Neutralize installation corrupt/tamper integrity check and update checksums
+# 8c. Neutralize installation corrupt/tamper integrity check and clear checksums
 print("Neutralizing integrity checks and updating product checksums...")
 for p in [app_out / "vs" / "workbench" / "workbench.desktop.main.js", app_out / "vs" / "sessions" / "sessions.desktop.main.js"]:
     if p.exists():
@@ -566,7 +558,11 @@ for p in [app_out / "vs" / "workbench" / "workbench.desktop.main.js", app_out / 
             if "_showNotification(){" in txt:
                 txt = txt.replace("_showNotification(){", "_showNotification(){return;")
                 print(f"Silenced _showNotification() in {p.name}")
-            # 2. Defeat _isPure
+            # 2. Defeat _compute
+            if "async _compute(){" in txt:
+                txt = txt.replace("async _compute(){", "async _compute(){return;")
+                print(f"Silenced _compute() in {p.name}")
+            # 3. Defeat _isPure
             if "async _isPure(){" in txt:
                 txt = txt.replace("async _isPure(){", "async _isPure(){return{isPure:true,proof:[]};")
                 print(f"Patched _isPure() in {p.name}")
@@ -574,21 +570,15 @@ for p in [app_out / "vs" / "workbench" / "workbench.desktop.main.js", app_out / 
         except Exception as e:
             print(f"Note patching {p.name}: {e}")
 
-# Recalculate and update all file checksums in product.json
+# Empty checksums in product.json so no file is ever verified
 if product_json_path.exists():
     with open(product_json_path, "r", encoding="utf-8") as f:
         prod = json.load(f)
-    if "checksums" in prod:
-        for rel_path in list(prod["checksums"].keys()):
-            full_p = app_out / rel_path
-            if full_p.exists():
-                data = full_p.read_bytes()
-                h = hashlib.sha256(data).digest()
-                b64 = base64.b64encode(h).decode("utf-8").rstrip("=")
-                prod["checksums"][rel_path] = b64
-        with open(product_json_path, "w", encoding="utf-8") as f:
-            json.dump(prod, f, indent=2)
-        print("Updated product.json checksums with fresh SHA-256 digests.")
+    prod["checksums"] = {}
+    prod["checksumFailMoreInfoUrl"] = ""
+    with open(product_json_path, "w", encoding="utf-8") as f:
+        json.dump(prod, f, indent=2)
+    print("Cleared product.json checksums.")
 
 # 9. Use rcedit to patch VisionX.exe binary icon and metadata
 rcedit_path = shutil.which("rcedit") or "rcedit.exe"
@@ -603,7 +593,9 @@ try:
         "--set-version-string", "CompanyName", "VisionX Technologies",
         "--set-version-string", "LegalCopyright", "Copyright (C) 2026 VisionX Contributors",
         "--set-version-string", "InternalName", "VisionX",
-        "--set-version-string", "OriginalFilename", "VisionX.exe"
+        "--set-version-string", "OriginalFilename", "VisionX.exe",
+        "--set-file-version", "1.6.0.0",
+        "--set-product-version", "1.6.0.0"
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode == 0:
@@ -614,5 +606,5 @@ except Exception as e:
     print("Could not run rcedit:", e)
 
 print("==================================================")
-print(" VisionX IDE v1.5.0 build completed successfully! ")
+print(" VisionX IDE v1.6.0 build completed successfully! ")
 print("==================================================")

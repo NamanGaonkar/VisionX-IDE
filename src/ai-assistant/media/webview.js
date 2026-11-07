@@ -245,18 +245,22 @@ function renderActiveSessionMessages() {
 }
 
 // Sessions Toggle
-sessionsToggle.onclick = () => {
-  const isShown = sessionsDrawer.style.display === 'flex';
-  sessionsDrawer.style.display = isShown ? 'none' : 'flex';
-};
-drawerNewSessionBtn.onclick = createNewSession;
-newChatBtn.onclick = createNewSession;
-refreshChatBtn.onclick = () => {
-  const s = getActiveSession();
-  s.messages = [];
-  renderActiveSessionMessages();
-  saveSessionsToExtension();
-};
+if (sessionsToggle) {
+  sessionsToggle.onclick = () => {
+    const isShown = sessionsDrawer.style.display === 'flex';
+    sessionsDrawer.style.display = isShown ? 'none' : 'flex';
+  };
+}
+if (drawerNewSessionBtn) drawerNewSessionBtn.onclick = createNewSession;
+if (newChatBtn) newChatBtn.onclick = createNewSession;
+if (refreshChatBtn) {
+  refreshChatBtn.onclick = () => {
+    const s = getActiveSession();
+    s.messages = [];
+    renderActiveSessionMessages();
+    saveSessionsToExtension();
+  };
+}
 
 // Open Graph link handler
 if (linkOpenGraph) {
@@ -541,18 +545,3 @@ window.copyCode = function(encoded) {
   const code = decodeURIComponent(encoded);
   vscode.postMessage({ type: 'copyClipboard', code });
 };
-
-window.quickPrompt = function(promptText) {
-  promptInput.value = promptText;
-  handleSend();
-};
-
-// Mode switcher
-let activeAgentMode = 'agent';
-document.querySelectorAll('.mode-pill').forEach(pill => {
-  pill.addEventListener('click', () => {
-    document.querySelectorAll('.mode-pill').forEach(p => p.classList.remove('active'));
-    pill.classList.add('active');
-    activeAgentMode = pill.getAttribute('data-mode');
-  });
-});
