@@ -6,7 +6,7 @@
 ### Autonomous AI and Spatial Developer Workspace
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://opensource.org/licenses/MIT)
-[![Release: v1.7.1](https://img.shields.io/badge/Release-v1.7.1-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.7.1)
+[![Release: v1.7.2](https://img.shields.io/badge/Release-v1.7.2-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.7.2)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-red.svg)]()
 [![Aesthetics](https://img.shields.io/badge/Aesthetics-Liquid%20Glass-ff5500.svg)]()
 [![AI Engine](https://img.shields.io/badge/AI%20Core-VisionX%20Agentic%20Chat-ffd700.svg)]()
@@ -15,6 +15,16 @@
 VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a sleek liquid glass dark obsidian aesthetic with modern rounded island cards, VisionX Agentic Chat as the built-in default autonomous coding agent (file editing, terminal execution, diffs, tool calling, multi-model BYOK, and local Ollama support), an interactive 360-degree orbital 3D project architecture graph in the bottom panel, macOS-style traffic light window controls, and seamless automatic migration of all VS Code extensions and settings.
 
 </div>
+
+---
+
+## What is New in v1.7.2
+
+- Fixed Activity Bar View Container Registration: Restored the proper `activitybar` view container contribution for VisionX Agentic Chat, ensuring the view and its focus commands are fully registered by the VS Code engine.
+- Restored Workbench Panel and Sidebar Layout: Removed restrictive container overrides from `.part.sidebar`, `.part.auxiliarybar`, and `.part.panel` that blocked panels and sashes from opening, resizing, and rendering webviews.
+- Fixed Title Bar Command Center Chat Toggle Button: Bound `claude-dev.SidebarProvider.focus` with dark/light glowing flame V icon definitions and explicit activation events, restoring one-click chat focusing directly from the title bar.
+- Restored 3D Architecture Graph Rendering: Guaranteed proper viewport dimensions and rendering context for the 3D orbital architecture graph in the bottom panel bar.
+- Cleaned CSS Selectors: Removed invalid non-standard pseudo-selectors that interfered with stylesheet compilation.
 
 ---
 

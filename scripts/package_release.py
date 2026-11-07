@@ -7,10 +7,10 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 DIST_DIR = BASE_DIR / "dist"
 SOURCE_DIR = DIST_DIR / "VisionX-win32-x64"
-OUTPUT_ZIP = DIST_DIR / "VisionX-Windows-x64-v1.7.1.zip"
+OUTPUT_ZIP = DIST_DIR / "VisionX-Windows-x64-v1.7.2.zip"
 
 print("==================================================")
-print("     VisionX IDE v1.7.1 - Packaging Release      ")
+print("     VisionX IDE v1.7.2 - Packaging Release      ")
 print("==================================================")
 
 if not SOURCE_DIR.exists():

@@ -17,7 +17,7 @@ ICON_PATH = BUILD_DIR / "icons" / "visionx.ico"
 LOGO_SVG_PATH = BASE_DIR / "src" / "branding" / "visionx-logo.svg"
 
 print("==================================================")
-print("     VisionX IDE v1.7.1 - Built-in Agentic Chat ")
+print("     VisionX IDE v1.7.2 - Built-in Agentic Chat ")
 print("==================================================")
 
 # 1. Clean and extract
@@ -110,7 +110,7 @@ if product_json_path.exists():
     })
     product["builtInExtensions"].append({
         "name": "visionx.visionx-project-graph",
-        "version": "1.7.1",
+        "version": "1.7.2",
         "repo": "https://github.com/NamanGaonkar/VisionX-IDE"
     })
 
@@ -250,12 +250,12 @@ if ext_dir.exists():
         cline_pkg["displayName"] = "VisionX Agentic Chat"
         cline_pkg["description"] = "Autonomous AI coding agent built into VisionX IDE"
 
-        # 1. Place chat container in secondarySidebar (right sidebar) by default
+        # 1. Place chat container in activitybar
         cline_pkg["contributes"]["viewsContainers"] = {
-            "secondarySidebar": [
+            "activitybar": [
                 {
                     "id": "claude-dev-ActivityBar",
-                    "title": "Chat",
+                    "title": "VisionX Agentic Chat",
                     "icon": "assets/icons/chat-v-icon.svg"
                 }
             ]
@@ -263,11 +263,24 @@ if ext_dir.exists():
 
         # 2. Add Chat command and button to commandCenter (in titlebar next to search)
         commands = cline_pkg.get("contributes", {}).get("commands", [])
-        commands.insert(0, {
-            "command": "claude-dev.SidebarProvider.focus",
-            "title": "VisionX Agentic Chat",
-            "icon": "assets/icons/chat-v-icon.svg"
-        })
+        has_focus_cmd = any(c.get("command") == "claude-dev.SidebarProvider.focus" for c in commands)
+        if not has_focus_cmd:
+            commands.insert(0, {
+                "command": "claude-dev.SidebarProvider.focus",
+                "title": "VisionX Agentic Chat",
+                "icon": {
+                    "dark": "./assets/icons/chat-v-icon.svg",
+                    "light": "./assets/icons/chat-v-icon.svg"
+                }
+            })
+        else:
+            for c in commands:
+                if c.get("command") == "claude-dev.SidebarProvider.focus":
+                    c["icon"] = {
+                        "dark": "./assets/icons/chat-v-icon.svg",
+                        "light": "./assets/icons/chat-v-icon.svg"
+                    }
+                    c["title"] = "VisionX Agentic Chat"
         cline_pkg["contributes"]["commands"] = commands
 
         menus = cline_pkg.get("contributes", {}).get("menus", {})
@@ -279,18 +292,27 @@ if ext_dir.exists():
 
         # 3. Add keyboard shortcut Ctrl+Alt+I (mac: cmd+alt+i) to focus chat
         keybindings = cline_pkg.get("contributes", {}).get("keybindings", [])
-        keybindings.insert(0, {
-            "command": "claude-dev.SidebarProvider.focus",
-            "key": "ctrl+alt+i",
-            "mac": "cmd+alt+i",
-            "win": "ctrl+alt+i",
-            "linux": "ctrl+alt+i"
-        })
+        has_kb = any(k.get("command") == "claude-dev.SidebarProvider.focus" for k in keybindings)
+        if not has_kb:
+            keybindings.insert(0, {
+                "command": "claude-dev.SidebarProvider.focus",
+                "key": "ctrl+alt+i",
+                "mac": "cmd+alt+i",
+                "win": "ctrl+alt+i",
+                "linux": "ctrl+alt+i"
+            })
         cline_pkg["contributes"]["keybindings"] = keybindings
+
+        # 4. Ensure activationEvents include view and focus command
+        act_events = cline_pkg.get("activationEvents", [])
+        for ev in ["onView:claude-dev.SidebarProvider", "onCommand:claude-dev.SidebarProvider.focus", "onCommand:workbench.view.extension.claude-dev-ActivityBar"]:
+            if ev not in act_events:
+                act_events.append(ev)
+        cline_pkg["activationEvents"] = act_events
 
         with open(cline_pkg_path, "w", encoding="utf-8") as f:
             json.dump(cline_pkg, f, indent=2)
-        print("Configured Cline package.json for secondary sidebar, commandCenter button, and Ctrl+Alt+I.")
+        print("Configured Cline package.json for activitybar, commandCenter button, and Ctrl+Alt+I.")
 
     # Neutralize telemetry in Cline
     cline_ext_js = target_cline / "dist" / "extension.js"
@@ -833,7 +855,6 @@ glass_css = """
 /* Completely eliminate corruption / tamper notification toasts */
 .monaco-workbench .notifications-toasts .notification-toast:has([aria-label*="corrupt"]),
 .monaco-workbench .notifications-toasts .notification-toast:has([aria-label*="corrupted"]),
-.monaco-workbench .notification-toast:has(.notification-message:has-text("corrupt")),
 [aria-label*="installation appears to be corrupt"] {
   display: none !important;
   visibility: hidden !important;
@@ -850,35 +871,18 @@ glass_css = """
 }
 
 /* ======================================================== */
-/* Modern Rounded Island Layout for Panels & Editors        */
-/* Rounded cards with crisp 1px borders & subtle depth      */
+/* Modern Rounded Island Layout for Editor Groups           */
 /* ======================================================== */
-.monaco-workbench.vs-dark .part.sidebar,
-.monaco-workbench.hc-black .part.sidebar,
-.monaco-workbench.vs-dark .part.auxiliarybar,
-.monaco-workbench.hc-black .part.auxiliarybar,
-.monaco-workbench.vs-dark .part.panel,
-.monaco-workbench.hc-black .part.panel,
 .monaco-workbench.vs-dark .part.editor .editor-group-container,
 .monaco-workbench.hc-black .part.editor .editor-group-container {
-  border-radius: 10px !important;
+  border-radius: 8px !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  overflow: hidden !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
 }
 
-.monaco-workbench.vs .part.sidebar,
-.monaco-workbench.hc-light .part.sidebar,
-.monaco-workbench.vs .part.auxiliarybar,
-.monaco-workbench.hc-light .part.auxiliarybar,
-.monaco-workbench.vs .part.panel,
-.monaco-workbench.hc-light .part.panel,
 .monaco-workbench.vs .part.editor .editor-group-container,
 .monaco-workbench.hc-light .part.editor .editor-group-container {
-  border-radius: 10px !important;
+  border-radius: 8px !important;
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  overflow: hidden !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06) !important;
 }
 
 /* Glowing VisionX Chat Toggle Button in Title Bar Command Center */
@@ -1139,8 +1143,8 @@ try:
         "--set-version-string", "LegalCopyright", "Copyright (C) 2026 VisionX Contributors",
         "--set-version-string", "InternalName", "VisionX",
         "--set-version-string", "OriginalFilename", "VisionX.exe",
-        "--set-file-version", "1.7.1.0",
-        "--set-product-version", "1.7.1.0"
+        "--set-file-version", "1.7.2.0",
+        "--set-product-version", "1.7.2.0"
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode == 0:
@@ -1151,5 +1155,5 @@ except Exception as e:
     print("Could not run rcedit:", e)
 
 print("==================================================")
-print(" VisionX IDE v1.7.1 build completed successfully! ")
+print(" VisionX IDE v1.7.2 build completed successfully! ")
 print("==================================================")
