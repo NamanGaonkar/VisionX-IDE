@@ -6,7 +6,7 @@
 ### Autonomous AI and Spatial Developer Workspace
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://opensource.org/licenses/MIT)
-[![Release: v1.6.5](https://img.shields.io/badge/Release-v1.6.5-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.6.5)
+[![Release: v1.6.6](https://img.shields.io/badge/Release-v1.6.6-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.6.6)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-red.svg)]()
 [![Aesthetics](https://img.shields.io/badge/Aesthetics-Liquid%20Glass-ff5500.svg)]()
 [![AI Engine](https://img.shields.io/badge/AI%20Core-BYOK%20Dynamic%20Discovery-ffd700.svg)]()
@@ -15,6 +15,18 @@
 VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a sleek liquid glass dark obsidian aesthetic, native Bring-Your-Own-Key (BYOK) dynamic AI model discovery, an interactive 360-degree orbital 3D project architecture graph in the bottom panel, macOS-style traffic light window controls, and seamless automatic migration of all VS Code extensions and settings.
 
 </div>
+
+---
+
+## What is New in v1.6.6
+
+- Native GitHub Copilot & VS Code Language Model API Detection: Added direct integration with VS Code's native `vscode.lm` language model architecture. Automatically discovers and communicates with GitHub Copilot Chat models and registered language model providers without manual API configuration.
+- Real Model Detection with Intelligent Filtering: Completely purged deceptive hardcoded fallback model lists. Provider scanning now queries actual endpoints and applies strict conversational filtering to strip out embeddings, audio/whisper/tts, moderation, and image models, presenting only verified chat and code generation models.
+- Full Ollama Online / Cloud & Local API Architecture: Built dedicated routing for the official Ollama Cloud API (`https://ollama.com/api` and `https://ollama.com/v1`) with Bearer token authentication, as well as local Ollama instances (`http://localhost:11434`), completely eliminating 404 path doubling.
+- Complete Removal of Agents Window from Windows Taskbar Jump List: Eliminated the legacy "Agents Window" task and blue hexagonal icon from the Windows taskbar right-click jump list context menu. Patched Electron jump list task generation in `mainImpl.js` so only the clean "New Window" action is registered.
+- Neutralized Agent Sessions Workspaces: Prevented agent sessions workspaces from being injected into Windows Jump List tasks or recent documents history.
+- Jump List Cache Purge: Automated the cleanup of stale Windows Jump List destination caches in `CustomDestinations` during installation.
+- Consolidated Resource Icons: Replaced legacy `sessions.ico` with the official high-resolution VisionX icon across all distribution resources.
 
 ---
 

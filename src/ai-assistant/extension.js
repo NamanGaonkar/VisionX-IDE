@@ -267,6 +267,21 @@ class VisionXAIViewProvider {
             webviewView.webview.html = '<h3>Error loading Chat: ' + e.message + '</h3>';
         }
 
+        if (vscode.lm && typeof vscode.lm.onDidChangeChatModels === 'function') {
+            this._context.subscriptions.push(
+                vscode.lm.onDidChangeChatModels(async () => {
+                    try {
+                        const models = await vscode.lm.selectChatModels({});
+                        const modelIds = models.map(m => m.id || `${m.vendor}/${m.family}`);
+                        webviewView.webview.postMessage({
+                            type: 'copilotModelsUpdated',
+                            models: modelIds
+                        });
+                    } catch {}
+                })
+            );
+        }
+
         webviewView.webview.onDidReceiveMessage(async (data) => {
             switch (data.type) {
                 case 'saveSettings': {
@@ -648,6 +663,30 @@ function resolveTarget(targetRef, currentFullPath, root, fileIdMap, fileBaseMap,
     }
 }
 
+function filterChatModels(modelIds) {
+    if (!Array.isArray(modelIds)) return [];
+    const excludePatterns = [
+        /embed/i, /text-embedding/i, /bge-/i, /gte-/i, /e5-/i,
+        /whisper/i, /tts/i, /audio/i, /speech/i,
+        /dall-e/i, /imagen/i, /flux/i, /stable-diffusion/i, /sdxl/i, /midjourney/i,
+        /moderation/i, /guard/i, /safety/i,
+        /davinci/i, /babbage/i, /curie/i, /ada(?!\d)/i,
+        /rerank/i, /similarity/i, /realtime/i, /transcription/i,
+        /tokenizer/i, /reward/i
+    ];
+    const seen = new Set();
+    const result = [];
+    for (const id of modelIds) {
+        if (!id || typeof id !== 'string') continue;
+        const trimmed = id.trim();
+        if (!trimmed || seen.has(trimmed)) continue;
+        if (excludePatterns.some(rx => rx.test(trimmed))) continue;
+        seen.add(trimmed);
+        result.push(trimmed);
+    }
+    return result;
+}
+
 async function fetchProviderModels(provider, baseUrl, apiKey) {
     baseUrl = (baseUrl || '').trim().replace(/\/+$/, '');
     const headers = {};
@@ -659,59 +698,94 @@ async function fetchProviderModels(provider, baseUrl, apiKey) {
         headers['X-Title'] = 'VisionX';
     }
 
-    if (provider === 'ollama' || provider === 'ollama_cloud') {
-        let raw = baseUrl || 'http://localhost:11434';
-        if (!raw.startsWith('http://') && !raw.startsWith('https://')) {
-            raw = 'http://' + raw;
-        }
-
-        if (raw.includes('ollama.com')) {
-            throw new Error('ollama.com is a web portal, not an API server. Ollama runs on http://localhost:11434 or on your private server IP (e.g. http://192.168.1.100:11434).');
-        }
-
-        const baseHost = raw.replace(/\/(v1\/chat\/completions|api\/chat|api\/generate|v1|api)$/, '').replace(/\/+$/, '');
-        let lastError = null;
-
-        // 1. Try native Ollama /api/tags
-        try {
-            const resp = await fetch(`${baseHost}/api/tags`, {
-                headers,
-                signal: AbortSignal.timeout(6000)
-            });
-            if (resp.ok) {
-                const data = await resp.json();
-                if (Array.isArray(data.models) && data.models.length > 0) {
-                    return data.models.map(m => m.name || m.model).filter(Boolean);
+    // 1. Native VS Code / GitHub Copilot Language Model API detection
+    if (provider === 'copilot' || provider === 'vscode_copilot') {
+        if (vscode.lm && typeof vscode.lm.selectChatModels === 'function') {
+            try {
+                const models = await vscode.lm.selectChatModels({});
+                if (models && models.length > 0) {
+                    return models.map(m => m.id || `${m.vendor}/${m.family}`);
                 }
-            } else {
-                lastError = `HTTP ${resp.status} from ${baseHost}/api/tags`;
+            } catch (err) {
+                throw new Error(`VS Code Language Model API error: ${err.message}`);
             }
-        } catch (e) {
-            lastError = e.message;
+            throw new Error('No GitHub Copilot or VS Code Language Models discovered. Ensure GitHub Copilot or a Language Model extension is installed and active in VS Code.');
         }
-
-        // 2. Try OpenAI-compatible /v1/models (modern Ollama, cloud Ollama proxies, LiteLLM)
-        try {
-            const resp = await fetch(`${baseHost}/v1/models`, {
-                headers,
-                signal: AbortSignal.timeout(6000)
-            });
-            if (resp.ok) {
-                const data = await resp.json();
-                const list = data.data || data.models || [];
-                const found = list.map(m => typeof m === 'string' ? m : (m.id || m.name)).filter(Boolean);
-                if (found.length > 0) return found;
-            } else {
-                lastError = `HTTP ${resp.status} from ${baseHost}/v1/models`;
-            }
-        } catch (e) {
-            lastError = e.message;
-        }
-
-        throw new Error(`Could not reach Ollama at ${baseHost} (${lastError || 'Unreachable'}). Ensure Ollama is running ('ollama serve') or check your host URL.`);
+        throw new Error('VS Code Language Model API (vscode.lm) is not available in this environment.');
     }
 
+    // 2. Ollama Cloud & Ollama Local
+    if (provider === 'ollama' || provider === 'ollama_cloud') {
+        let raw = baseUrl || (provider === 'ollama_cloud' ? 'https://ollama.com/api' : 'http://localhost:11434');
+        if (!raw.startsWith('http://') && !raw.startsWith('https://')) {
+            raw = (raw.includes('ollama.com') ? 'https://' : 'http://') + raw;
+        }
+
+        const isOllamaCom = raw.includes('ollama.com');
+        let baseHost = raw.replace(/\/(api\/chat|api\/generate|v1\/chat\/completions|api\/tags|v1\/models|v1|api)$/, '').replace(/\/+$/, '');
+        if (isOllamaCom) {
+            baseHost = 'https://ollama.com';
+        }
+
+        const scanEndpoints = [
+            `${baseHost}/api/tags`,
+            `${baseHost}/v1/models`,
+            `${baseHost}/api/models`
+        ];
+
+        let lastError = null;
+        for (const ep of scanEndpoints) {
+            try {
+                const resp = await fetch(ep, {
+                    headers,
+                    signal: AbortSignal.timeout(8000)
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (Array.isArray(data.models) && data.models.length > 0) {
+                        const models = data.models.map(m => m.name || m.model).filter(Boolean);
+                        if (models.length > 0) return filterChatModels(models);
+                    }
+                    if (Array.isArray(data.data) && data.data.length > 0) {
+                        const models = data.data.map(m => typeof m === 'string' ? m : (m.id || m.name)).filter(Boolean);
+                        const filtered = filterChatModels(models);
+                        if (filtered.length > 0) return filtered;
+                    }
+                } else {
+                    const body = await resp.text().catch(() => '');
+                    lastError = `HTTP ${resp.status} from ${ep}: ${body}`;
+                }
+            } catch (e) {
+                lastError = e.message;
+            }
+        }
+
+        throw new Error(`Could not reach Ollama at ${baseHost} (${lastError || 'Unreachable'}). Ensure Ollama is running or verify your URL and API Key for Ollama Cloud.`);
+    }
+
+    // 3. Anthropic Claude Direct
     if (provider === 'anthropic') {
+        if (!apiKey) {
+            throw new Error('Anthropic API key is required to scan available Claude models.');
+        }
+        try {
+            const resp = await fetch('https://api.anthropic.com/v1/models', {
+                headers: {
+                    'x-api-key': apiKey,
+                    'anthropic-version': '2023-06-01'
+                },
+                signal: AbortSignal.timeout(8000)
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                if (Array.isArray(data.data) && data.data.length > 0) {
+                    const models = data.data.map(m => m.id).filter(Boolean);
+                    const filtered = filterChatModels(models);
+                    if (filtered.length > 0) return filtered;
+                }
+            }
+        } catch (e) {}
+
         return [
             'claude-3-7-sonnet-20250219',
             'claude-3-5-sonnet-20241022',
@@ -720,9 +794,10 @@ async function fetchProviderModels(provider, baseUrl, apiKey) {
         ];
     }
 
+    // 4. Google Gemini Direct
     if (provider === 'gemini') {
         if (!apiKey) {
-            return ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+            throw new Error('Google Gemini API key is required to scan models.');
         }
         try {
             const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`, {
@@ -731,15 +806,22 @@ async function fetchProviderModels(provider, baseUrl, apiKey) {
             if (resp.ok) {
                 const data = await resp.json();
                 if (Array.isArray(data.models)) {
-                    return data.models
+                    const models = data.models
                         .map(m => m.name.replace(/^models\//, ''))
                         .filter(m => m.includes('gemini'));
+                    const filtered = filterChatModels(models);
+                    if (filtered.length > 0) return filtered;
                 }
+            } else {
+                const body = await resp.text().catch(() => '');
+                throw new Error(`HTTP ${resp.status} from Google Gemini API: ${body}`);
             }
-        } catch (e) {}
-        return ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+        } catch (e) {
+            throw new Error(`Gemini model scan error: ${e.message}`);
+        }
     }
 
+    // 5. OpenAI / OpenAI-Compatible (OpenRouter, Groq, DeepSeek, Mistral, xAI, LM Studio, Custom)
     let scanUrl = baseUrl;
     if (!scanUrl.endsWith('/models')) {
         scanUrl = scanUrl.endsWith('/') ? `${scanUrl}models` : `${scanUrl}/models`;
@@ -753,57 +835,77 @@ async function fetchProviderModels(provider, baseUrl, apiKey) {
         if (resp.ok) {
             const data = await resp.json();
             const rawList = data.data || data.models || [];
-            const models = rawList.map(m => typeof m === 'string' ? m : (m.id || m.name)).filter(Boolean);
-            if (models.length > 0) return models;
+            const rawModels = rawList.map(m => typeof m === 'string' ? m : (m.id || m.name)).filter(Boolean);
+            const chatModels = filterChatModels(rawModels);
+            if (chatModels.length > 0) return chatModels;
+            if (rawModels.length > 0) return rawModels;
+            throw new Error(`No models found in response from ${scanUrl}`);
+        } else {
+            const body = await resp.text().catch(() => '');
+            throw new Error(`HTTP ${resp.status} from ${scanUrl}: ${body}`);
         }
     } catch (e) {
-        if (apiKey) {
-            throw new Error(`Model scan failed from ${scanUrl}: ${e.message}`);
-        }
+        throw new Error(`Model scan failed from ${scanUrl}: ${e.message}`);
     }
-
-    const defaults = {
-        openrouter: ['anthropic/claude-3.7-sonnet', 'openai/gpt-4o', 'deepseek/deepseek-r1', 'meta-llama/llama-3.3-70b-instruct', 'qwen/qwen-2.5-coder-32b-instruct'],
-        openai: ['gpt-4o', 'gpt-4o-mini', 'o1', 'o3-mini', 'gpt-4-turbo'],
-        deepseek: ['deepseek-chat', 'deepseek-reasoner'],
-        groq: ['llama-3.3-70b-versatile', 'deepseek-r1-distill-llama-70b', 'llama-3.1-8b-instant'],
-        xai: ['grok-2', 'grok-beta', 'grok-2-mini'],
-        mistral: ['codestral-latest', 'mistral-large-latest', 'mistral-small-latest']
-    };
-    return defaults[provider] || ['default-model'];
 }
 
 async function executeChatCompletion({ provider, baseUrl, apiKey, model, prompt, messages }) {
     model = (model || 'llama3.3').trim();
 
+    // 1. Native VS Code / GitHub Copilot Language Model execution
+    if (provider === 'copilot' || provider === 'vscode_copilot') {
+        if (!vscode.lm || typeof vscode.lm.selectChatModels !== 'function') {
+            throw new Error('VS Code Language Model API (vscode.lm) is not available.');
+        }
+        let [selectedModel] = await vscode.lm.selectChatModels({ id: model });
+        if (!selectedModel) {
+            [selectedModel] = await vscode.lm.selectChatModels({ family: model });
+        }
+        if (!selectedModel) {
+            const allModels = await vscode.lm.selectChatModels({});
+            if (allModels.length === 0) {
+                throw new Error('No GitHub Copilot or VS Code Language Models available.');
+            }
+            selectedModel = allModels[0];
+        }
+        const vsMessages = (messages || [{ role: 'user', content: prompt }]).map(m => {
+            if (m.role === 'assistant') {
+                return vscode.LanguageModelChatMessage.Assistant(m.content);
+            }
+            return vscode.LanguageModelChatMessage.User(m.content);
+        });
+        const cts = new vscode.CancellationTokenSource();
+        const chatResp = await selectedModel.sendRequest(vsMessages, {}, cts.token);
+        let fullText = '';
+        for await (const chunk of chatResp.text) {
+            fullText += chunk;
+        }
+        return fullText;
+    }
+
+    // 2. Ollama Cloud & Ollama Local
     if (provider === 'ollama' || provider === 'ollama_cloud') {
-        let raw = (baseUrl || 'http://localhost:11434').trim().replace(/\/+$/, '');
+        let raw = (baseUrl || (provider === 'ollama_cloud' ? 'https://ollama.com/api' : 'http://localhost:11434')).trim().replace(/\/+$/, '');
         if (!raw.startsWith('http://') && !raw.startsWith('https://')) {
-            raw = 'http://' + raw;
+            raw = (raw.includes('ollama.com') ? 'https://' : 'http://') + raw;
         }
 
-        if (raw.includes('ollama.com')) {
-            throw new Error('ollama.com is a web portal, not an API server. Ollama runs on http://localhost:11434 or on your private server IP (e.g. http://192.168.1.100:11434).');
+        const isOllamaCom = raw.includes('ollama.com');
+        let baseHost = raw.replace(/\/(api\/chat|api\/generate|v1\/chat\/completions|api\/tags|v1\/models|v1|api)$/, '').replace(/\/+$/, '');
+        if (isOllamaCom) {
+            baseHost = 'https://ollama.com';
         }
 
-        const baseHost = raw.replace(/\/(v1\/chat\/completions|api\/chat|api\/generate|v1|api)$/, '').replace(/\/+$/, '');
         const ollamaHeaders = {
             'Content-Type': 'application/json',
             ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
         };
 
-        const endpoints = [];
-        if (raw.endsWith('/api/chat')) {
-            endpoints.push({ url: raw, type: 'chat' });
-        } else if (raw.endsWith('/v1/chat/completions')) {
-            endpoints.push({ url: raw, type: 'openai' });
-        } else if (raw.endsWith('/api/generate')) {
-            endpoints.push({ url: raw, type: 'generate' });
-        }
-        
-        endpoints.push({ url: `${baseHost}/api/chat`, type: 'chat' });
-        endpoints.push({ url: `${baseHost}/v1/chat/completions`, type: 'openai' });
-        endpoints.push({ url: `${baseHost}/api/generate`, type: 'generate' });
+        const endpoints = [
+            { url: `${baseHost}/api/chat`, type: 'chat' },
+            { url: `${baseHost}/v1/chat/completions`, type: 'openai' },
+            { url: `${baseHost}/api/generate`, type: 'generate' }
+        ];
 
         let lastErr = null;
         for (const ep of endpoints) {
@@ -841,21 +943,21 @@ async function executeChatCompletion({ provider, baseUrl, apiKey, model, prompt,
                     }
                 }
 
-                const errBody = await resp.text();
+                const errBody = await resp.text().catch(() => '');
                 lastErr = `HTTP ${resp.status} from ${ep.url}: ${errBody}`;
-                if (resp.status === 404 && (errBody.includes('not found') || errBody.includes('404'))) {
+                if (resp.status === 404) {
                     continue;
                 }
                 throw new Error(lastErr);
             } catch (err) {
-                if (err.message && (err.message.includes('401') || err.message.includes('403') || err.message.includes('model') || err.message.includes('ollama.com'))) {
+                if (err.message && (err.message.includes('401') || err.message.includes('403') || err.message.includes('model') || err.message.includes('unauthorized'))) {
                     throw err;
                 }
                 lastErr = err.message;
             }
         }
 
-        throw new Error(`Ollama connection error at ${baseHost}: ${lastErr || 'Endpoint unreachable'}. Ensure model '${model}' is pulled ('ollama pull ${model}').`);
+        throw new Error(`Ollama connection error at ${baseHost}: ${lastErr || 'Endpoint unreachable'}. Verify your model name ('${model}') and API key.`);
     }
 
     if (provider === 'anthropic') {

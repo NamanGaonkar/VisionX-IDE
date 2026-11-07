@@ -2,7 +2,7 @@
   "name": "visionx-ai-assistant",
   "displayName": "VisionX Chat & 3D Project Architecture",
   "description": "Native Copilot-style Chat, Sessions, and 3D Project Architecture Graph for VisionX IDE",
-  "version": "1.6.5",
+  "version": "1.6.6",
   "publisher": "VisionX",
   "engines": {
     "vscode": "^1.80.0"

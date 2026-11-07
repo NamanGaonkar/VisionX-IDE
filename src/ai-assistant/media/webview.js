@@ -36,7 +36,8 @@ const attachedImgTag = document.getElementById('attached-img-tag');
 const activeContextLabel = document.getElementById('active-context-label');
 
 const PROVIDER_DEFAULTS = {
-  ollama_cloud: { url: '', defaultModel: 'llama3.3' },
+  copilot:      { url: '', defaultModel: 'copilot/gpt-4o' },
+  ollama_cloud: { url: 'https://ollama.com/api', defaultModel: 'llama3.3' },
   ollama:       { url: 'http://localhost:11434', defaultModel: 'llama3.3' },
   openrouter:   { url: 'https://openrouter.ai/api/v1', defaultModel: 'anthropic/claude-3.7-sonnet' },
   custom:       { url: 'https://api.together.xyz/v1', defaultModel: 'meta-llama/llama-3.3-70b-instruct' },
@@ -97,9 +98,19 @@ window.addEventListener('message', event => {
     popApiKey.value = currentSettings.apiKey || '';
     popModel.value = currentSettings.model || currentSettings.customModel || PROVIDER_DEFAULTS[prov]?.defaultModel || '';
 
+    const baseUrlRow = document.getElementById('pop-baseurl-row');
+    const apiKeyRow = document.getElementById('pop-apikey-row');
+    if (prov === 'copilot') {
+      if (baseUrlRow) baseUrlRow.style.display = 'none';
+      if (apiKeyRow) apiKeyRow.style.display = 'none';
+    } else {
+      if (baseUrlRow) baseUrlRow.style.display = 'flex';
+      if (apiKeyRow) apiKeyRow.style.display = 'flex';
+    }
+
     if (currentSettings.discoveredModels && currentSettings.discoveredModels.length > 0) {
       populateModelSuggestions(currentSettings.discoveredModels);
-    } else if (currentSettings.apiKey || prov === 'ollama' || prov === 'ollama_cloud' || prov === 'lmstudio') {
+    } else if (prov === 'copilot' || currentSettings.apiKey || prov === 'ollama' || prov === 'ollama_cloud' || prov === 'lmstudio') {
       detectModels();
     }
     updatePill();
@@ -117,20 +128,20 @@ window.addEventListener('message', event => {
     } else {
       activeContextLabel.textContent = 'Ready';
     }
-  } else if (msg.type === 'modelsDiscovered') {
-    if (msg.success && Array.isArray(msg.models) && msg.models.length > 0) {
+  } else if (msg.type === 'copilotModelsUpdated' || msg.type === 'modelsDiscovered') {
+    if (msg.models && Array.isArray(msg.models) && msg.models.length > 0) {
       currentSettings.discoveredModels = msg.models;
       populateModelSuggestions(msg.models);
-      if (!popModel.value) {
+      if (!popModel.value || !msg.models.includes(popModel.value)) {
         popModel.value = msg.models[0];
         currentSettings.model = msg.models[0];
       }
       updatePill();
       popStatus.style.color = '#4ade80';
-      popStatus.textContent = msg.models.length + ' models discovered from ' + popProvider.value.toUpperCase() + '.';
+      popStatus.textContent = msg.models.length + ' real chat models verified and loaded.';
     } else {
       popStatus.style.color = '#f87171';
-      popStatus.textContent = msg.error ? ('Connection failed: ' + msg.error) : 'No models discovered from endpoint.';
+      popStatus.textContent = msg.error ? ('Connection error: ' + msg.error) : 'No models detected from endpoint.';
     }
   } else if (msg.type === 'chatResponse') {
     const aiEl = pendingRequests.get(msg.reqId);
@@ -280,21 +291,34 @@ if (cardCloseBtn) {
 // Provider Popover Handlers
 popProvider.onchange = () => {
   const prov = popProvider.value;
-  if (prov === 'ollama') {
-    popBaseUrl.value = 'http://localhost:11434';
-    popModel.value = 'llama3.3';
-  } else if (prov === 'ollama_cloud') {
-    if (!popBaseUrl.value || popBaseUrl.value === 'http://localhost:11434') {
-      popBaseUrl.value = '';
+  const baseUrlRow = document.getElementById('pop-baseurl-row');
+  const apiKeyRow = document.getElementById('pop-apikey-row');
+
+  if (prov === 'copilot') {
+    if (baseUrlRow) baseUrlRow.style.display = 'none';
+    if (apiKeyRow) apiKeyRow.style.display = 'none';
+    popModel.placeholder = 'e.g. copilot/gpt-4o, claude-3.5-sonnet';
+    popStatus.style.color = '#94a3b8';
+    popStatus.textContent = 'Using VS Code native Language Model API & Copilot authentication.';
+  } else {
+    if (baseUrlRow) baseUrlRow.style.display = 'flex';
+    if (apiKeyRow) apiKeyRow.style.display = 'flex';
+
+    if (prov === 'ollama') {
+      popBaseUrl.value = 'http://localhost:11434';
+      popModel.placeholder = 'e.g. llama3.3, mistral, codellama';
+    } else if (prov === 'ollama_cloud') {
+      popBaseUrl.value = 'https://ollama.com/api';
+      popBaseUrl.placeholder = 'https://ollama.com/api or your cloud Ollama host';
+      popModel.placeholder = 'e.g. llama3.3, gemma4:31b, deepseek-r1';
+    } else if (PROVIDER_DEFAULTS[prov]) {
+      popBaseUrl.value = PROVIDER_DEFAULTS[prov].url;
+      popModel.value = PROVIDER_DEFAULTS[prov].defaultModel;
+      popModel.placeholder = 'e.g. ' + PROVIDER_DEFAULTS[prov].defaultModel;
     }
-    popBaseUrl.placeholder = 'http://your-remote-host:11434';
-    popModel.value = 'llama3.3';
-  } else if (PROVIDER_DEFAULTS[prov]) {
-    popBaseUrl.value = PROVIDER_DEFAULTS[prov].url;
-    popModel.value = PROVIDER_DEFAULTS[prov].defaultModel;
+    popStatus.style.color = '#94a3b8';
+    popStatus.textContent = 'Configure credentials for ' + prov.toUpperCase() + '.';
   }
-  popStatus.style.color = '#94a3b8';
-  popStatus.textContent = 'Configure credentials for ' + prov.toUpperCase() + '.';
   detectModels();
 };
 
@@ -350,12 +374,16 @@ function detectModels() {
   const apiKey = popApiKey.value.trim();
 
   popStatus.style.color = '#94a3b8';
-  popStatus.textContent = 'Scanning models from ' + provider.toUpperCase() + '...';
+  if (provider === 'copilot') {
+    popStatus.textContent = 'Querying GitHub Copilot / VS Code Language Model API...';
+  } else {
+    popStatus.textContent = 'Scanning real models from ' + provider.toUpperCase() + '...';
+  }
 
   // Request models from Node extension backend (100% bypasses browser webview CORS!)
   vscode.postMessage({
     type: 'scanModels',
-    provider: (provider === 'ollama_cloud' ? 'ollama' : provider),
+    provider: provider,
     baseUrl: baseUrl,
     apiKey: apiKey
   });
@@ -416,11 +444,12 @@ function handleSend() {
   pendingRequests.set(reqId, aiMsgEl);
 
   let effectiveProvider = currentSettings.provider || 'openrouter';
-  if (effectiveProvider === 'ollama_cloud') effectiveProvider = 'ollama';
 
   let effectiveBaseUrl = currentSettings.baseUrl || PROVIDER_DEFAULTS[currentSettings.provider]?.url || '';
   if (effectiveProvider === 'ollama' && !effectiveBaseUrl) {
     effectiveBaseUrl = 'http://localhost:11434';
+  } else if (effectiveProvider === 'ollama_cloud' && !effectiveBaseUrl) {
+    effectiveBaseUrl = 'https://ollama.com/api';
   }
 
   // Build message history from current session

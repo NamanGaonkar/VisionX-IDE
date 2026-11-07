@@ -14,7 +14,7 @@ EXE_PATH = INSTALL_DIR / "VisionX.exe"
 BIN_PATH = INSTALL_DIR / "bin"
 
 print("==================================================")
-print("     VisionX IDE v1.6.5 - Local Windows Re-installer ")
+print("     VisionX IDE v1.6.6 - Local Windows Re-installer ")
 print("==================================================")
 
 if not DIST_DIR.exists():
@@ -35,11 +35,11 @@ if INSTALL_DIR.exists():
         print(f"Note during cleanup: {e}")
 
 INSTALL_DIR.mkdir(parents=True, exist_ok=True)
-print("Copying fresh VisionX v1.6.5 binaries...")
+print("Copying fresh VisionX v1.6.6 binaries...")
 shutil.copytree(DIST_DIR, INSTALL_DIR, dirs_exist_ok=True)
 print("Binaries copied successfully.")
 
-# 3. Clean any corrupted NLS / cache markers
+# 3. Clean any corrupted NLS / cache markers and stale Windows Jump List caches
 appdata = Path(os.environ.get("APPDATA", ""))
 clp_dir = appdata / "VisionX" / "clp"
 if clp_dir.exists():
@@ -48,6 +48,20 @@ if clp_dir.exists():
         print("Cleared cached NLS markers from AppData/VisionX/clp.")
     except Exception:
         pass
+
+# Clean stale Windows Jump List destination files referencing --agents or Agents Window
+appdata_recent = appdata / "Microsoft" / "Windows" / "Recent"
+for d in ["CustomDestinations", "AutomaticDestinations"]:
+    folder = appdata_recent / d
+    if folder.exists():
+        for f in folder.iterdir():
+            try:
+                content = f.read_bytes()
+                if b"--agents" in content or "Agents Window".encode("utf-16le") in content:
+                    f.unlink(missing_ok=True)
+                    print(f"Purged stale jump list cache: {f.name}")
+            except Exception:
+                pass
 
 # 4. Create Windows Shortcuts via PowerShell script
 desktop = Path.home() / "Desktop"
@@ -137,5 +151,5 @@ if vscode_ext.exists():
     print(f"Migrated and linked {linked_exts} extensions across VisionX target directories.")
 
 print("==================================================")
-print(" VisionX IDE v1.6.5 Installed Locally!            ")
+print(" VisionX IDE v1.6.6 Installed Locally!            ")
 print("==================================================")

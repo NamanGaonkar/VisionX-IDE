@@ -116,6 +116,7 @@ if res_win32.exists():
     print("Injecting custom VisionX icons into resources...")
     shutil.copy(ICON_PATH, res_win32 / "code.ico")
     shutil.copy(ICON_PATH, res_win32 / "default.ico")
+    shutil.copy(ICON_PATH, res_win32 / "sessions.ico")
     
     png_128 = BUILD_DIR / "icons" / "visionx_128.png"
     if png_128.exists():
@@ -727,6 +728,25 @@ if main_impl.exists():
             txt = txt.replace(t3, "async ensureAgentsWindow(e){return null;")
             print("Disabled ensureAgentsWindow in mainImpl.js")
             
+        # Remove Agents Window from Windows Jump List tasks
+        old_jump_agents = 'r.push({type:"task",title:u(4051,null),description:u(4059,null),program:process.execPath,args:"--agents",iconPath:N(this.environmentMainService.appRoot,"resources/win32/sessions.ico"),iconIndex:0})'
+        if old_jump_agents in txt:
+            txt = txt.replace(old_jump_agents, "void 0")
+            print("Removed Agents Window from Windows Jump List tasks in mainImpl.js")
+        else:
+            import re
+            txt = re.sub(r'r\.push\(\{[^}]*args:"--agents"[^}]*\}\)', 'void 0', txt)
+            print("Applied regex to remove --agents task from mainImpl.js")
+
+        # Neutralize canonicalizeAgentSessionsWorkspaces so agent sessions workspaces are never added to jump list/recents
+        old_canon = 't.push({workspace:_k(this.environmentMainService.agentSessionsWorkspace),label:u(4052,null)})'
+        if old_canon in txt:
+            txt = txt.replace(old_canon, "void 0")
+            print("Neutralized canonicalizeAgentSessionsWorkspaces in mainImpl.js")
+
+        # Replace any remaining sessions.ico references with code.ico
+        txt = txt.replace("resources/win32/sessions.ico", "resources/win32/code.ico")
+            
         main_impl.write_text(txt, encoding="utf-8")
     except Exception as e:
         print(f"Note disabling agents in mainImpl: {e}")
@@ -875,8 +895,8 @@ try:
         "--set-version-string", "LegalCopyright", "Copyright (C) 2026 VisionX Contributors",
         "--set-version-string", "InternalName", "VisionX",
         "--set-version-string", "OriginalFilename", "VisionX.exe",
-        "--set-file-version", "1.6.5.0",
-        "--set-product-version", "1.6.5.0"
+        "--set-file-version", "1.6.6.0",
+        "--set-product-version", "1.6.6.0"
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode == 0:
