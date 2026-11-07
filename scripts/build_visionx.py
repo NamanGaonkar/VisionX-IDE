@@ -1008,29 +1008,52 @@ glass_css = """
   border-radius: 6px !important;
 }
 
-/* Glowing VisionX Chat Toggle Button in Title Bar Command Center (Outside Search Box) */
+/* Glowing VisionX Chat Toggle Button in Title Bar Command Center (Icon Only, No Wording) */
 .monaco-workbench .part.titlebar .codicon-comment-discussion,
 .monaco-workbench .part.titlebar .command-center .action-item [class*="codicon-comment-discussion"],
 .monaco-workbench .part.titlebar .command-center .action-item:has([class*="chat-v-icon"]),
 .monaco-workbench .part.titlebar .command-center .action-item [class*="chat-v-icon"],
 .monaco-workbench .part.titlebar .command-center .action-item [class*="chatSparkle"],
 .monaco-workbench .part.titlebar .command-center .action-item:has([class*="chatSparkle"]),
-.monaco-workbench .part.titlebar .action-item:has(a[aria-label*="VisionX Agentic Chat"]),
+.monaco-workbench .part.titlebar .command-center .action-item:has(a[aria-label*="VisionX"]),
+.monaco-workbench .part.titlebar .command-center .action-item a[aria-label*="VisionX"],
+.monaco-workbench .part.titlebar .command-center .action-item:has(a[aria-label*="Chat"]),
+.monaco-workbench .part.titlebar .command-center .action-item a[aria-label*="Chat"],
+.monaco-workbench .part.titlebar .command-center [id*="claude-dev.SidebarProvider.focus"],
 .monaco-workbench .part.titlebar .action-item a[aria-label*="VisionX Agentic Chat"],
-.monaco-workbench .part.titlebar [id*="claude-dev.SidebarProvider.focus"],
 .monaco-workbench .part.titlebar .action-item a[aria-label*="VisionX Chat"] {
   background-image: url("{logo_b64_url}") !important;
   background-size: 16px !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
-  width: 24px !important;
-  height: 24px !important;
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  max-width: 26px !important;
   border-radius: 6px !important;
   margin: 0 4px !important;
+  padding: 0 !important;
   transition: all 0.2s ease !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
+  font-size: 0px !important;
+  color: transparent !important;
+  line-height: 0px !important;
+  text-indent: -9999px !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+}
+.monaco-workbench .part.titlebar .command-center .action-item:has(a[aria-label*="VisionX"]) *,
+.monaco-workbench .part.titlebar .command-center .action-item a[aria-label*="VisionX"] *,
+.monaco-workbench .part.titlebar .command-center .action-item:has(a[aria-label*="Chat"]) *,
+.monaco-workbench .part.titlebar .command-center .action-item a[aria-label*="Chat"] * {
+  font-size: 0px !important;
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  width: 0px !important;
+  height: 0px !important;
 }
 .monaco-workbench .part.titlebar .codicon-comment-discussion::before,
 .monaco-workbench .part.titlebar .command-center .action-item [class*="codicon-comment-discussion"]::before,
@@ -1042,9 +1065,9 @@ glass_css = """
 .monaco-workbench.vs-dark .part.titlebar .command-center .action-item:has([class*="chat-v-icon"]):hover,
 .monaco-workbench.hc-black .part.titlebar .command-center .action-item:has([class*="chat-v-icon"]):hover,
 .monaco-workbench.vs-dark .part.titlebar .action-item:has(.codicon-comment-discussion):hover,
-.monaco-workbench.vs-dark .part.titlebar .action-item:has(a[aria-label*="VisionX Agentic Chat"]):hover,
-.monaco-workbench.vs-dark .part.titlebar .action-item a[aria-label*="VisionX Agentic Chat"]:hover,
-.monaco-workbench.hc-black .part.titlebar .action-item a[aria-label*="VisionX Agentic Chat"]:hover,
+.monaco-workbench.vs-dark .part.titlebar .command-center .action-item:has(a[aria-label*="VisionX"]):hover,
+.monaco-workbench.vs-dark .part.titlebar .command-center .action-item a[aria-label*="VisionX"]:hover,
+.monaco-workbench.hc-black .part.titlebar .command-center .action-item a[aria-label*="VisionX"]:hover,
 .monaco-workbench.vs-dark .part.titlebar [id*="claude-dev.SidebarProvider.focus"]:hover {
   background-color: rgba(255, 85, 0, 0.25) !important;
   box-shadow: 0 0 10px rgba(255, 85, 0, 0.5) !important;
@@ -1093,12 +1116,12 @@ if main_impl.exists():
     try:
         txt = main_impl.read_text(encoding="utf-8", errors="ignore")
         
-        # Prepend global environment variable setup so all child processes (Extension Host, Workbench)
-        # inherit VSCODE_EXTENSIONS pointing directly to ~/.vscode/extensions for instant startup
-        init_ext_code = '(function(){try{const p=require("path"),o=require("os"),f=require("fs"),v=p.join(o.homedir(),".vscode","extensions");if(!process.env.VSCODE_EXTENSIONS&&f.existsSync(v))process.env.VSCODE_EXTENSIONS=v;}catch(e){}})();\n'
+        # Prepend global environment variable setup and seamless VS Code auto-sync on first launch
+        # Inherits VSCODE_EXTENSIONS, creates VisionX\extensions junction, and migrates settings/themes cleanly
+        init_ext_code = '(function(){try{const p=require("path"),o=require("os"),f=require("fs"),h=o.homedir(),v=p.join(h,".vscode","extensions");if(!process.env.VSCODE_EXTENSIONS&&f.existsSync(v))process.env.VSCODE_EXTENSIONS=v;const vxExt=p.join(h,"VisionX","extensions");if(!f.existsSync(vxExt)&&f.existsSync(v)){try{require("child_process").execSync(\'cmd /c mklink /J "\'+vxExt+\'" "\'+v+\'"\',{windowsHide:true,stdio:"ignore"});}catch{}}const appdata=process.env.APPDATA||p.join(h,"AppData","Roaming"),codeUser=p.join(appdata,"Code","User"),vxUser=p.join(appdata,"VisionX","User");if(f.existsSync(codeUser)&&!f.existsSync(p.join(vxUser,"settings.json"))){try{f.mkdirSync(vxUser,{recursive:true});for(const item of ["settings.json","keybindings.json","snippets"]){const src=p.join(codeUser,item),dst=p.join(vxUser,item);if(f.existsSync(src)&&!f.existsSync(dst)){f.cpSync(src,dst,{recursive:true});}}}catch{}}}catch(e){}})();\n'
         if "VSCODE_EXTENSIONS" not in txt[:300]:
             txt = init_ext_code + txt
-            print("Injected process.env.VSCODE_EXTENSIONS initializer at top of mainImpl.js")
+            print("Injected process.env.VSCODE_EXTENSIONS & VS Code auto-sync initializer at top of mainImpl.js")
 
         txt = txt.replace("checksumFailMoreInfoUrl:\"https://go.microsoft.com/fwlink/?LinkId=828886\"", "checksumFailMoreInfoUrl:\"\"")
         txt = txt.replace("else if(n.agents)r=await this.windowsMainService.openAgentsWindow(a);", "else if(n.agents)return;")
@@ -1169,12 +1192,12 @@ if wb_js.exists():
             txt = txt.replace(old_acc, new_acc)
             print("Disabled Accounts/Profile activity bar registration in workbench.desktop.main.js")
 
-        # Add VisionX Agentic Chat toggle button OUTSIDE search bar in CommandCenter (order 102)
+        # Add VisionX Agentic Chat toggle button in CommandCenter (order 102, icon only, no wording)
         cmd_target = 'De.appendMenuItem(F.CommandCenter,{submenu:F.CommandCenterCenter,title:d(8632,null),icon:A.shield,order:101});'
-        chat_cmd_menu = 'De.appendMenuItem(F.CommandCenter,{command:{id:"claude-dev.SidebarProvider.focus",title:"VisionX Agentic Chat"},icon:A.chatSparkle,order:102});'
+        chat_cmd_menu = 'De.appendMenuItem(F.CommandCenter,{command:{id:"claude-dev.SidebarProvider.focus",title:"",icon:A.chatSparkle},order:102});'
         if cmd_target in txt and chat_cmd_menu not in txt:
             txt = txt.replace(cmd_target, cmd_target + chat_cmd_menu)
-            print("Added VisionX Agentic Chat toggle button outside search bar in CommandCenter")
+            print("Added VisionX Agentic Chat icon-only toggle button to CommandCenter")
             
         # Filter out Accounts from titlebar action toolbar
         old_tb_acc = "T2(this.globalToolbarMenu.getActions(),n,r=>r===MDo)"
