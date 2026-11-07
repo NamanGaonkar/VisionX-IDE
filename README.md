@@ -6,7 +6,7 @@
 ### Autonomous AI and Spatial Developer Workspace
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://opensource.org/licenses/MIT)
-[![Release: v1.4.0](https://img.shields.io/badge/Release-v1.4.0-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.4.0)
+[![Release: v1.5.0](https://img.shields.io/badge/Release-v1.5.0-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.5.0)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-red.svg)]()
 [![Aesthetics](https://img.shields.io/badge/Aesthetics-Liquid%20Glass-ff5500.svg)]()
 [![AI Engine](https://img.shields.io/badge/AI%20Core-BYOK%20Dynamic%20Discovery-ffd700.svg)]()
@@ -15,6 +15,16 @@
 VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a symmetrical Liquid Glass interface, native Bring-Your-Own-Key (BYOK) dynamic AI model discovery, interactive 2D project architecture dependency visualization, macOS-style window controls, and full compatibility with the Open VSX extension ecosystem.
 
 </div>
+
+---
+
+## What is New in v1.5.0
+
+- Frosted Glass Acrylic Workbench: Full Windows 11 DWM Acrylic / backdrop-filter blur integration across all workbench layers (editor, sidebar, activity bar, panel, title bar) allowing the desktop background to show through with a true frosted glass aesthetic.
+- Ollama Online and Remote Cloud API Support: Native Node-level provider execution eliminating browser webview CORS boundaries. Full support for local instances (`http://localhost:11434`), remote Ollama instances, reverse proxies, and token-authenticated cloud endpoints.
+- High-Precision Traffic Light Window Controls: Red (Close), Yellow (Minimize), and Green (Maximize) pure circular window buttons matching desktop reference design without inner glyphs or borders bleeding.
+- Universal BYOK Model Scanner: Scan and auto-recognize models across any endpoint (Ollama Online/Local, OpenRouter, Anthropic Claude, OpenAI, Google Gemini, DeepSeek, Groq, xAI Grok, Mistral, Together, Perplexity, and custom OpenAI-compatible proxies).
+- Enhanced Multi-Session Chat & Context Transfer: Seamless one-click code insertion, clipboard integration, image uploads, and active workspace file context streaming.
 
 ---
 
@@ -69,7 +79,7 @@ VisionX is a high-velocity code editor and developer workspace built on an open-
 ## Installation and Quick Start
 
 ### Standalone Release (Windows x64)
-1. Download the latest release archive (`VisionX-Windows-x64-v1.4.0.zip`) from the Releases section.
+1. Download the latest release archive (`VisionX-Windows-x64-v1.5.0.zip`) from the Releases section.
 2. Extract the archive to your preferred folder.
 3. Run `VisionX.exe`.
 

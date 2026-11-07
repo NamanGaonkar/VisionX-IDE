@@ -35,7 +35,7 @@ if INSTALL_DIR.exists():
         print(f"Note during cleanup: {e}")
 
 INSTALL_DIR.mkdir(parents=True, exist_ok=True)
-print("Copying fresh VisionX v1.4.0 binaries...")
+print("Copying fresh VisionX v1.5.0 binaries...")
 shutil.copytree(DIST_DIR, INSTALL_DIR, dirs_exist_ok=True)
 print("Binaries copied successfully.")
 

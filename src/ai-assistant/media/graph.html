@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Project Architecture Graph</title>
+  <title>VisionX 3D Project Architecture Graph</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background-color: var(--vscode-editor-background, #080a10);
+      background-color: var(--vscode-editor-background, #06080e);
       color: var(--vscode-foreground, #e2e8f0);
       font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
       font-size: 12px;
@@ -24,9 +24,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 6px 12px;
-      background: var(--vscode-sideBar-background, #05060a);
-      border-bottom: 1px solid var(--vscode-panel-border, rgba(255, 85, 0, 0.2));
+      padding: 6px 14px;
+      background: rgba(8, 10, 16, 0.85);
+      border-bottom: 1px solid var(--vscode-panel-border, rgba(255, 85, 0, 0.25));
+      backdrop-filter: blur(20px);
       z-index: 10;
       gap: 10px;
     }
@@ -37,19 +38,20 @@
     }
     .header-title {
       font-weight: 600;
-      font-size: 12px;
+      font-size: 13px;
       color: var(--vscode-foreground);
       display: flex;
       align-items: center;
       gap: 6px;
     }
     .header-badge {
-      background: var(--vscode-badge-background, rgba(255, 85, 0, 0.15));
-      color: var(--vscode-badge-foreground, #ff8800);
-      border: 1px solid rgba(255, 85, 0, 0.3);
-      padding: 2px 6px;
-      border-radius: 10px;
+      background: rgba(255, 85, 0, 0.15);
+      color: #ffaa00;
+      border: 1px solid rgba(255, 85, 0, 0.35);
+      padding: 2px 8px;
+      border-radius: 12px;
       font-size: 10px;
+      font-weight: 600;
     }
     .header-right {
       display: flex;
@@ -57,34 +59,35 @@
       gap: 6px;
     }
     .search-input {
-      background: var(--vscode-input-background, #1e1e1e);
+      background: var(--vscode-input-background, #141724);
       color: var(--vscode-input-foreground, #ccc);
       border: 1px solid var(--vscode-input-border, rgba(128, 128, 128, 0.3));
-      border-radius: 4px;
-      padding: 3px 8px;
+      border-radius: 5px;
+      padding: 4px 8px;
       font-size: 11px;
-      width: 160px;
+      width: 170px;
       outline: none;
+      transition: border-color 0.15s;
     }
     .search-input:focus {
-      border-color: var(--vscode-focusBorder, #007acc);
+      border-color: var(--vscode-focusBorder, #ff5500);
     }
     .filter-select {
-      background: var(--vscode-dropdown-background, #1e1e1e);
+      background: var(--vscode-dropdown-background, #141724);
       color: var(--vscode-dropdown-foreground, #ccc);
       border: 1px solid var(--vscode-dropdown-border, rgba(128, 128, 128, 0.3));
-      border-radius: 4px;
-      padding: 3px 6px;
+      border-radius: 5px;
+      padding: 4px 8px;
       font-size: 11px;
       outline: none;
     }
     .icon-btn {
-      background: transparent;
+      background: rgba(255, 255, 255, 0.05);
       border: 1px solid var(--vscode-button-border, rgba(128, 128, 128, 0.25));
       color: var(--vscode-foreground, #ccc);
       cursor: pointer;
-      padding: 3px 8px;
-      border-radius: 4px;
+      padding: 4px 9px;
+      border-radius: 5px;
       font-size: 11px;
       display: flex;
       align-items: center;
@@ -92,18 +95,26 @@
       transition: all 0.15s;
     }
     .icon-btn:hover {
-      background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.1));
+      background: rgba(255, 85, 0, 0.2);
+      border-color: #ff5500;
+      color: #ffaa00;
+    }
+    .icon-btn.active {
+      background: rgba(255, 85, 0, 0.25);
+      border-color: #ff5500;
+      color: #ffaa00;
+      font-weight: 600;
     }
 
-    /* Canvas Area */
+    /* 3D Canvas Area */
     .canvas-container {
       flex: 1;
       position: relative;
       overflow: hidden;
       cursor: grab;
-      background: radial-gradient(circle at center, rgba(255, 85, 0, 0.03) 0%, rgba(5, 6, 10, 0.95) 100%);
+      background: radial-gradient(circle at center, #0f1322 0%, #06080e 85%);
     }
-    .canvas-container.panning {
+    .canvas-container:active {
       cursor: grabbing;
     }
     canvas {
@@ -112,174 +123,245 @@
       left: 0;
       width: 100%;
       height: 100%;
+      display: block;
     }
 
-    /* Floating Inspector Panel */
+    /* Floating 3D Navigation Controls */
+    .nav-controls {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(14, 18, 30, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 5px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      z-index: 5;
+    }
+    .nav-btn {
+      width: 30px;
+      height: 30px;
+      background: transparent;
+      border: none;
+      color: var(--vscode-foreground, #ccc);
+      cursor: pointer;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+      transition: background 0.15s;
+    }
+    .nav-btn:hover {
+      background: rgba(255, 85, 0, 0.25);
+      color: #ffaa00;
+    }
+
+    /* 3D Instructions Overlay */
+    .hint-overlay {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(14, 18, 30, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 11px;
+      color: #888;
+      backdrop-filter: blur(14px);
+      pointer-events: none;
+      display: flex;
+      gap: 12px;
+      z-index: 5;
+    }
+    .hint-overlay span strong {
+      color: #ccc;
+    }
+
+    /* Floating Glass Node Inspector */
     .node-inspector {
       position: absolute;
-      bottom: 16px;
-      right: 16px;
-      width: 280px;
-      background: var(--vscode-editorWidget-background, #0d101a);
-      border: 1px solid var(--vscode-widget-border, rgba(255, 85, 0, 0.35));
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-      border-radius: 8px;
-      padding: 12px;
+      top: 20px;
+      left: 20px;
+      width: 290px;
+      background: rgba(12, 16, 26, 0.88);
+      border: 1px solid rgba(255, 85, 0, 0.35);
+      border-radius: 10px;
+      padding: 14px 16px;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
       display: none;
       flex-direction: column;
-      gap: 8px;
-      z-index: 20;
-      backdrop-filter: blur(8px);
+      gap: 10px;
+      z-index: 6;
+      animation: fadeIn 0.2s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     .inspector-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid rgba(128, 128, 128, 0.2);
-      padding-bottom: 6px;
+      align-items: flex-start;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 8px;
     }
-    .inspector-title {
+    .inspector-name {
+      font-size: 13px;
       font-weight: 600;
-      font-size: 12px;
-      color: #ffaa00;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 220px;
+      color: #fff;
+      word-break: break-all;
     }
     .inspector-close {
       cursor: pointer;
       color: #888;
       font-size: 14px;
+      line-height: 1;
     }
     .inspector-close:hover {
       color: #fff;
     }
-    .inspector-meta {
+    .inspector-path {
       font-size: 11px;
-      color: var(--vscode-descriptionForeground, #94a3b8);
+      color: #888;
+      word-break: break-all;
+    }
+    .inspector-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      font-size: 11px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 8px;
+      border-radius: 6px;
+    }
+    .detail-item {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 2px;
     }
-    .meta-row {
-      display: flex;
-      justify-content: space-between;
+    .detail-label {
+      color: #777;
+      font-size: 10px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .detail-val {
+      color: #ddd;
+      font-weight: 500;
     }
     .inspector-actions {
       display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-top: 6px;
+      gap: 8px;
+      margin-top: 4px;
     }
-    .btn-action {
-      background: var(--vscode-button-background, #0078d4);
-      color: var(--vscode-button-foreground, #fff);
-      border: none;
-      padding: 6px 10px;
-      border-radius: 4px;
-      cursor: pointer;
+    .inspector-btn {
+      flex: 1;
+      padding: 6px;
       font-size: 11px;
       font-weight: 500;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: background 0.15s;
-    }
-    .btn-action:hover {
-      background: var(--vscode-button-hoverBackground, #0060aa);
-    }
-    .btn-secondary {
-      background: var(--vscode-button-secondaryBackground, rgba(255, 255, 255, 0.08));
-      color: var(--vscode-button-secondaryForeground, #ccc);
-      border: 1px solid rgba(128, 128, 128, 0.2);
-    }
-    .btn-secondary:hover {
-      background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.15));
-    }
-
-    /* Mini Map / Zoom Controls */
-    .zoom-controls {
-      position: absolute;
-      bottom: 16px;
-      left: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      background: rgba(13, 16, 26, 0.8);
-      border: 1px solid rgba(128, 128, 128, 0.25);
       border-radius: 6px;
-      padding: 4px;
-      z-index: 10;
-    }
-    .zoom-btn {
-      width: 26px;
-      height: 26px;
-      background: transparent;
-      border: none;
-      color: #ccc;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 4px;
-      font-size: 14px;
-      font-weight: bold;
+      border: 1px solid transparent;
+      text-align: center;
+      transition: all 0.15s;
     }
-    .zoom-btn:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
+    .btn-action-primary {
+      background: #ff5500;
+      color: #ffffff;
+    }
+    .btn-action-primary:hover {
+      background: #e04400;
+    }
+    .btn-action-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: var(--vscode-foreground);
+    }
+    .btn-action-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
     }
   </style>
 </head>
 <body>
   <div class="graph-header">
     <div class="header-left">
-      <span class="header-title">Architecture Graph</span>
-      <span class="header-badge" id="stats-badge">Scanning...</span>
+      <div class="header-title">
+        <span>3D Architecture Graph</span>
+      </div>
+      <span class="header-badge" id="stats-badge">Scanning 3D Project Nodes...</span>
     </div>
+
     <div class="header-right">
-      <input type="text" class="search-input" id="search-input" placeholder="Find file in graph...">
+      <input type="text" class="search-input" id="search-input" placeholder="Search 3D nodes...">
       <select class="filter-select" id="filter-type">
         <option value="all">All File Types</option>
         <option value="py">Python (.py)</option>
-        <option value="js">JavaScript (.js)</option>
-        <option value="ts">TypeScript (.ts)</option>
-        <option value="json">JSON (.json)</option>
-        <option value="css">CSS (.css)</option>
+        <option value="js">JavaScript / TypeScript</option>
+        <option value="web">HTML / CSS</option>
+        <option value="config">JSON / Config</option>
       </select>
-      <button class="icon-btn" id="refresh-btn" title="Rescan project dependencies">↺ Rescan</button>
-      <button class="icon-btn" id="fit-btn" title="Fit to screen">Fit</button>
+      <button class="icon-btn active" id="rotate-toggle-btn" title="Toggle 3D Ambient Rotation">Auto-Rotate</button>
+      <button class="icon-btn" id="fit-btn" title="Reset 3D Camera View">Reset Camera</button>
+      <button class="icon-btn" id="open-chat-btn" title="Open VisionX Chat">Chat</button>
     </div>
   </div>
 
   <div class="canvas-container" id="canvas-container">
     <canvas id="graph-canvas"></canvas>
 
-    <!-- Zoom Controls -->
-    <div class="zoom-controls">
-      <button class="zoom-btn" id="zoom-in" title="Zoom In">+</button>
-      <button class="zoom-btn" id="zoom-out" title="Zoom Out">-</button>
-      <button class="zoom-btn" id="zoom-reset" title="Reset View">1:1</button>
+    <!-- Floating Navigation Controls -->
+    <div class="nav-controls">
+      <button class="nav-btn" id="zoom-in" title="Zoom In (+)">+</button>
+      <button class="nav-btn" id="zoom-out" title="Zoom Out (-)">−</button>
+      <button class="nav-btn" id="zoom-reset" title="Reset View">↺</button>
     </div>
 
-    <!-- Floating Node Inspector -->
+    <!-- 3D Controls Legend -->
+    <div class="hint-overlay">
+      <span><strong>Drag:</strong> 3D Rotate</span>
+      <span><strong>Scroll:</strong> Zoom In / Out</span>
+      <span><strong>Click Node:</strong> Fly & Inspect</span>
+      <span><strong>Click Background:</strong> Reset View</span>
+    </div>
+
+    <!-- Floating Glass Node Inspector -->
     <div class="node-inspector" id="node-inspector">
       <div class="inspector-header">
-        <span class="inspector-title" id="inspector-name">file.py</span>
+        <span class="inspector-name" id="inspector-name">File.js</span>
         <span class="inspector-close" id="inspector-close">✕</span>
       </div>
-      <div class="inspector-meta">
-        <div class="meta-row"><span>Path:</span> <span id="inspector-path">src/...</span></div>
-        <div class="meta-row"><span>Type:</span> <span id="inspector-type">Python</span></div>
-        <div class="meta-row"><span>Size:</span> <span id="inspector-size">12 KB</span></div>
-        <div class="meta-row"><span>Imports Out:</span> <span id="inspector-imports-out">0</span></div>
-        <div class="meta-row"><span>Imported By:</span> <span id="inspector-imports-in">0</span></div>
+      <div class="inspector-path" id="inspector-path">src/path/File.js</div>
+      
+      <div class="inspector-details">
+        <div class="detail-item">
+          <span class="detail-label">File Type</span>
+          <span class="detail-val" id="inspector-type">JavaScript</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">File Size</span>
+          <span class="detail-val" id="inspector-size">12.4 KB</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Outbound Links</span>
+          <span class="detail-val" id="inspector-imports-out">3 files</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Inbound References</span>
+          <span class="detail-val" id="inspector-imports-in">5 files</span>
+        </div>
       </div>
+
       <div class="inspector-actions">
-        <button class="btn-action" id="ask-chat-btn">Ask VisionX Chat About File</button>
-        <button class="btn-action btn-secondary" id="open-file-btn">Open File in Editor</button>
+        <button class="inspector-btn btn-action-primary" id="ask-chat-btn">Ask VisionX Chat</button>
+        <button class="inspector-btn btn-action-secondary" id="open-file-btn">Open File</button>
       </div>
     </div>
   </div>

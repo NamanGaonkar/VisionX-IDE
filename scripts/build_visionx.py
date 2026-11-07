@@ -17,7 +17,7 @@ ICON_PATH = BUILD_DIR / "icons" / "visionx.ico"
 LOGO_SVG_PATH = BASE_DIR / "src" / "branding" / "visionx-logo.svg"
 
 print("==================================================")
-print("     VisionX IDE v1.4.0 - Complete Engine Rebuild ")
+print("     VisionX IDE v1.5.0 - Engine Rebuild & Polish ")
 print("==================================================")
 
 # 1. Clean and extract
@@ -117,7 +117,7 @@ if res_win32.exists():
         shutil.copy(png_128, res_win32 / "code_150x150.png")
         shutil.copy(png_128, res_win32 / "code_70x70.png")
 
-# 6. Replace ALL blue SVGs (titlebar, welcome, letterpress watermark) with VisionX Logo SVG
+# 6. Replace ALL blue SVGs with VisionX Logo SVG
 logo_svg = ""
 logo_b64_url = ""
 if LOGO_SVG_PATH.exists():
@@ -154,82 +154,110 @@ if ext_dir.exists():
         shutil.rmtree(target_ai)
     shutil.copytree(BASE_DIR / "src" / "ai-assistant", target_ai)
 
-# 8. Inject Theme-Compatible Liquid Glass CSS into workbench stylesheet
+# 7b. Patch mainImpl.js for Windows 11 DWM Acrylic Frosted Glass
+main_impl = VISIONX_DIST / "resources" / "app" / "out" / "mainImpl.js"
+if main_impl.exists():
+    print("Patching mainImpl.js for Windows 11 Acrylic frosted glass vibrancy...")
+    txt = main_impl.read_text(encoding="utf-8", errors="ignore")
+    target_dc = 'c={backgroundColor:r.getBackgroundColor(),'
+    replacement_dc = 'c={backgroundColor:"#00000000",backgroundMaterial:"acrylic",vibrancy:"fullscreen-ui",'
+    if target_dc in txt:
+        txt = txt.replace(target_dc, replacement_dc)
+        main_impl.write_text(txt, encoding="utf-8")
+        print("Successfully enabled acrylic backgroundMaterial in BrowserWindow options.")
+
+# 8. macOS-Style Traffic Light Window Controls CSS matching uploaded image
 traffic_light_css = """
 /* ======================================================== */
 /* macOS-Style Traffic Light Window Controls                */
 /* Red (Close) -> Yellow (Minimize) -> Green (Maximize)     */
+/* Strictly matching user reference: pure circles, no icons */
 /* ======================================================== */
-.monaco-workbench .part.titlebar .window-controls-container {
+.monaco-workbench .part.titlebar .window-controls-container,
+.monaco-workbench .titlebar-right .window-controls-container {
   display: flex !important;
   align-items: center !important;
-  justify-content: center !important;
+  justify-content: flex-end !important;
   gap: 8px !important;
-  padding: 0 14px !important;
+  padding: 0 16px !important;
   width: auto !important;
+  min-width: 76px !important;
+  height: 100% !important;
+  -webkit-app-region: no-drag !important;
 }
 
-.monaco-workbench .part.titlebar .window-controls-container > .window-icon {
-  width: 13px !important;
-  height: 13px !important;
-  min-width: 13px !important;
-  max-width: 13px !important;
-  min-height: 13px !important;
-  max-height: 13px !important;
+.monaco-workbench .part.titlebar .window-controls-container > .window-icon,
+.monaco-workbench .titlebar-right .window-controls-container > .window-icon {
+  width: 12px !important;
+  height: 12px !important;
+  min-width: 12px !important;
+  max-width: 12px !important;
+  min-height: 12px !important;
+  max-height: 12px !important;
   border-radius: 50% !important;
   margin: 0 !important;
   padding: 0 !important;
   font-size: 0px !important;
+  line-height: 0px !important;
   color: transparent !important;
-  transition: transform 0.15s ease, filter 0.15s ease, opacity 0.15s ease !important;
   cursor: pointer !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  display: inline-block !important;
+  box-sizing: border-box !important;
+  transition: transform 0.15s ease, filter 0.15s ease !important;
 }
 
-.monaco-workbench .part.titlebar .window-controls-container > .window-icon::before {
+/* Remove any default Windows icons or glyphs inside circles */
+.monaco-workbench .part.titlebar .window-controls-container > .window-icon::before,
+.monaco-workbench .part.titlebar .window-controls-container > .window-icon::after,
+.monaco-workbench .titlebar-right .window-controls-container > .window-icon::before,
+.monaco-workbench .titlebar-right .window-controls-container > .window-icon::after {
   content: "" !important;
   display: none !important;
 }
 
-/* Red (Close) */
-.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-close {
+/* Red (Close) on Left */
+.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-close,
+.monaco-workbench .titlebar-right .window-controls-container > .window-icon.window-close {
   order: 1 !important;
   background-color: #ff5f56 !important;
   border: 1px solid #e0443e !important;
-  box-shadow: 0 0 5px rgba(255, 95, 86, 0.4) !important;
+  box-shadow: 0 0 3px rgba(255, 95, 86, 0.4) !important;
 }
-.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-close:hover {
+.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-close:hover,
+.monaco-workbench .titlebar-right .window-controls-container > .window-icon.window-close:hover {
   background-color: #ff3b30 !important;
   filter: brightness(1.15) !important;
-  transform: scale(1.15) !important;
+  transform: scale(1.12) !important;
 }
 
-/* Yellow (Minimize) */
-.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-minimize {
+/* Yellow (Minimize) in Middle */
+.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-minimize,
+.monaco-workbench .titlebar-right .window-controls-container > .window-icon.window-minimize {
   order: 2 !important;
   background-color: #ffbd2e !important;
   border: 1px solid #dea123 !important;
-  box-shadow: 0 0 5px rgba(255, 189, 46, 0.4) !important;
+  box-shadow: 0 0 3px rgba(255, 189, 46, 0.4) !important;
 }
-.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-minimize:hover {
+.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-minimize:hover,
+.monaco-workbench .titlebar-right .window-controls-container > .window-icon.window-minimize:hover {
   background-color: #ffaa00 !important;
   filter: brightness(1.15) !important;
-  transform: scale(1.15) !important;
+  transform: scale(1.12) !important;
 }
 
-/* Green (Maximize / Restore) */
-.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-max-restore {
+/* Green (Maximize / Restore) on Right */
+.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-max-restore,
+.monaco-workbench .titlebar-right .window-controls-container > .window-icon.window-max-restore {
   order: 3 !important;
   background-color: #27c93f !important;
   border: 1px solid #1aab29 !important;
-  box-shadow: 0 0 5px rgba(39, 201, 63, 0.4) !important;
+  box-shadow: 0 0 3px rgba(39, 201, 63, 0.4) !important;
 }
-.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-max-restore:hover {
+.monaco-workbench .part.titlebar .window-controls-container > .window-icon.window-max-restore:hover,
+.monaco-workbench .titlebar-right .window-controls-container > .window-icon.window-max-restore:hover {
   background-color: #20b034 !important;
   filter: brightness(1.15) !important;
-  transform: scale(1.15) !important;
+  transform: scale(1.12) !important;
 }
 """
 
@@ -285,15 +313,20 @@ agent_branding_css = f"""
 
 glass_css = """
 /* ======================================================== */
-/* VisionX Symmetrical Geometry & Fluid Aesthetics          */
-/* Fully Theme-Compatible: Uses active theme CSS variables  */
+/* VisionX Frosted Glass Liquid Workbench Aesthetics        */
+/* Translucent acrylic layers with background wallpaper blur*/
 /* ======================================================== */
 
-/* OPAQUE, SOLID TITLE BAR - NO CONTENT BLEED */
+html, body, .monaco-workbench {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
 .monaco-workbench .part.titlebar {
-  background-color: var(--vscode-titleBar-activeBackground) !important;
-  color: var(--vscode-titleBar-activeForeground) !important;
-  border-bottom: 1px solid var(--vscode-titleBar-border, rgba(128, 128, 128, 0.2)) !important;
+  background-color: rgba(8, 10, 16, 0.72) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
   height: 38px !important;
   z-index: 100 !important;
 }
@@ -313,25 +346,58 @@ glass_css = """
 
 .monaco-workbench .part.titlebar .menubar .menubar-menu-button:hover,
 .monaco-workbench .part.titlebar .menubar .menubar-menu-button.open {
-  background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.15)) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
 }
 
 /* Rounded Symmetrical Search Command Center */
 .monaco-workbench .part.titlebar .command-center {
   border-radius: 8px !important;
-  background: var(--vscode-commandCenter-background, rgba(128, 128, 128, 0.08)) !important;
-  border: 1px solid var(--vscode-commandCenter-border, rgba(128, 128, 128, 0.2)) !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(12px) !important;
   transition: all 0.2s ease !important;
 }
 
 .monaco-workbench .part.titlebar .command-center:hover {
-  border-color: var(--vscode-commandCenter-activeBorder, var(--vscode-focusBorder, #ff5500)) !important;
+  border-color: #ff5500 !important;
+  background: rgba(255, 255, 255, 0.10) !important;
 }
 
-/* Activity Bar Items: Smooth Rounded Pills */
+/* Activity Bar: Frosted Acrylic Pill Container */
+.monaco-workbench .part.activitybar {
+  background-color: rgba(6, 8, 14, 0.68) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
 .monaco-workbench .part.activitybar .action-item {
   border-radius: 8px !important;
   margin: 4px 2px !important;
+}
+
+/* Sidebar: Frosted Acrylic Translucent Panel */
+.monaco-workbench .part.sidebar {
+  background-color: rgba(8, 10, 18, 0.65) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Editor: Semi-Translucent with Acrylic Pass-Through */
+.monaco-workbench .part.editor {
+  background-color: rgba(10, 12, 22, 0.58) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container {
+  background-color: transparent !important;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container {
+  background-color: rgba(8, 10, 18, 0.60) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
 /* Rounded Symmetrical Editor Tabs */
@@ -340,6 +406,35 @@ glass_css = """
   margin: 2px 2px 0 2px !important;
   border-right: none !important;
   transition: all 0.15s ease !important;
+  background-color: rgba(14, 18, 30, 0.50) !important;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab.active {
+  background-color: rgba(22, 28, 48, 0.75) !important;
+  border-bottom: 2px solid #ff5500 !important;
+}
+
+/* Monaco Code Editor Translucency */
+.monaco-editor,
+.monaco-editor .overflow-guard,
+.monaco-editor-background {
+  background-color: transparent !important;
+}
+
+/* Bottom Panel: Frosted Acrylic */
+.monaco-workbench .part.panel {
+  background-color: rgba(6, 8, 14, 0.70) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Status Bar: Clean Translucent Footer */
+.monaco-workbench .part.statusbar {
+  background-color: rgba(6, 8, 14, 0.78) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
 /* Rounded Popups, Quick Inputs & Dialog Widgets */
@@ -348,13 +443,40 @@ glass_css = """
 .monaco-workbench .editor-widget {
   border-radius: 10px !important;
   overflow: hidden !important;
-  border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.25)) !important;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
 }
 
 /* Rounded Sleek Scrollbars */
 .monaco-scrollable-element > .scrollbar > .slider {
   border-radius: 6px !important;
+}
+
+/* Completely eliminate Accounts / Profile Icon */
+.monaco-workbench .part.activitybar .action-item:has(.accounts-view-bar-icon),
+.monaco-workbench .part.activitybar .action-item:has(.codicon-account),
+.monaco-workbench .part.activitybar .action-item[aria-label*="Accounts"],
+.monaco-workbench .part.activitybar .action-item[aria-label*="Account"],
+.monaco-workbench .part.activitybar .action-item:has([aria-label*="Account"]),
+.monaco-workbench .part.activitybar .accounts-activity-item,
+.monaco-workbench .part.titlebar [aria-label*="Accounts"],
+.monaco-workbench .part.titlebar [aria-label*="Account"],
+.monaco-workbench .accounts-view-bar-icon,
+.monaco-workbench .codicon-account,
+[id="workbench.actions.manageAccounts"] {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0px !important;
+  height: 0px !important;
+  min-width: 0px !important;
+  min-height: 0px !important;
+  max-width: 0px !important;
+  max-height: 0px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  pointer-events: none !important;
 }
 """
 
@@ -373,6 +495,20 @@ if sessions_css.exists():
 # 8b. Rebrand hardcoded VS Code / copilot-vscode strings in JS & NLS bundles
 print("Neutralizing VS Code and copilot-vscode strings in scripts & bundles...")
 app_out = VISIONX_DIST / "resources" / "app" / "out"
+
+# Disable Accounts/Profile action registration in workbench.desktop.main.js
+wb_js = app_out / "vs" / "workbench" / "workbench.desktop.main.js"
+if wb_js.exists():
+    try:
+        txt = wb_js.read_text(encoding="utf-8", errors="ignore")
+        old_acc = "this.accountsVisibilityPreference&&this.globalActivityActionBar.push(this.accountAction,{index:bj.ACCOUNTS_ACTION_INDEX})"
+        new_acc = "false&&this.globalActivityActionBar.push(this.accountAction,{index:bj.ACCOUNTS_ACTION_INDEX})"
+        if old_acc in txt:
+            txt = txt.replace(old_acc, new_acc)
+            wb_js.write_text(txt, encoding="utf-8")
+            print("Successfully disabled Accounts/Profile activity bar icon registration in workbench.desktop.main.js")
+    except Exception as e:
+        print(f"Note patching accounts: {e}")
 
 string_replacements = [
     ("copilot-vscode", "visionx"),
@@ -478,5 +614,5 @@ except Exception as e:
     print("Could not run rcedit:", e)
 
 print("==================================================")
-print(" VisionX IDE v1.4.0 build completed successfully! ")
+print(" VisionX IDE v1.5.0 build completed successfully! ")
 print("==================================================")

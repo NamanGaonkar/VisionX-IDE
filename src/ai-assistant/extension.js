@@ -43,6 +43,14 @@ function activate(context) {
         })
     );
 
+    // Persistent 3D Graph Status Bar Item outside Chat
+    const graphStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    graphStatusBar.text = '$(type-hierarchy) 3D Graph';
+    graphStatusBar.tooltip = 'VisionX: Open 3D Project Architecture Graph';
+    graphStatusBar.command = 'visionx.openProjectGraph';
+    graphStatusBar.show();
+    context.subscriptions.push(graphStatusBar);
+
     // First launch check: Offer to import from VS Code
     checkFirstLaunchImport(context);
 }
@@ -266,6 +274,26 @@ class VisionXAIViewProvider {
                     vscode.window.showInformationMessage('VisionX: Copied to clipboard');
                     break;
                 }
+                case 'scanModels': {
+                    const { provider, baseUrl, apiKey } = data;
+                    try {
+                        const models = await fetchProviderModels(provider, baseUrl, apiKey);
+                        webviewView.webview.postMessage({ type: 'modelsDiscovered', models, success: true });
+                    } catch (err) {
+                        webviewView.webview.postMessage({ type: 'modelsDiscovered', models: [], error: err.message, success: false });
+                    }
+                    break;
+                }
+                case 'sendChat': {
+                    const { reqId, provider, baseUrl, apiKey, model, prompt, messages, imageBase64 } = data;
+                    try {
+                        const reply = await executeChatCompletion({ provider, baseUrl, apiKey, model, prompt, messages, imageBase64 });
+                        webviewView.webview.postMessage({ type: 'chatResponse', reqId, text: reply, success: true });
+                    } catch (err) {
+                        webviewView.webview.postMessage({ type: 'chatResponse', reqId, text: null, error: err.message, success: false });
+                    }
+                    break;
+                }
                 case 'importVSCodeTrigger': {
                     await importFromVSCode(true);
                     break;
@@ -347,11 +375,16 @@ function setupGraphWebview(webview, extensionUri, context, aiProvider) {
                 }
                 break;
             }
-            case 'askChat': {
+            case 'askChat':
+            case 'sendExternalPrompt': {
                 await vscode.commands.executeCommand('visionx.aiView.focus');
                 if (aiProvider) {
                     aiProvider.sendExternalPrompt(data.prompt);
                 }
+                break;
+            }
+            case 'openChat': {
+                await vscode.commands.executeCommand('visionx.aiView.focus');
                 break;
             }
         }
@@ -474,6 +507,52 @@ async function scanWorkspaceGraph() {
         } catch {}
     }
 
+    // Cluster files by parent directory so 100% of nodes are connected in 3D
+    const dirMap = new Map();
+    for (const node of nodes) {
+        const dir = path.dirname(node.path).replace(/\\/g, '/');
+        if (!dirMap.has(dir)) dirMap.set(dir, []);
+        dirMap.get(dir).push(node);
+    }
+
+    const existingEdgeSet = new Set(edges.map(e => `${e.source}->${e.target}`));
+
+    for (const [dir, dirNodes] of dirMap.entries()) {
+        if (dirNodes.length > 1) {
+            const primary = dirNodes.find(n => n.name.startsWith('index.') || n.name.startsWith('main.') || n.name === '__init__.py') || dirNodes[0];
+            for (const child of dirNodes) {
+                if (child !== primary) {
+                    const k1 = `${primary.id}->${child.id}`;
+                    const k2 = `${child.id}->${primary.id}`;
+                    if (!existingEdgeSet.has(k1) && !existingEdgeSet.has(k2)) {
+                        edges.push({ source: primary.id, target: child.id, kind: 'cluster' });
+                        existingEdgeSet.add(k1);
+                        primary.importsOut++;
+                        child.importsIn++;
+                    }
+                }
+            }
+        }
+    }
+
+    // Connect directory roots to workspace entry files
+    const rootNodes = nodes.filter(n => !n.path.includes('/'));
+    if (rootNodes.length > 0) {
+        const mainRoot = rootNodes.find(n => n.name === 'package.json' || n.name === 'README.md') || rootNodes[0];
+        for (const [dir, dirNodes] of dirMap.entries()) {
+            if (dir !== '.') {
+                const primary = dirNodes[0];
+                const k = `${mainRoot.id}->${primary.id}`;
+                if (!existingEdgeSet.has(k) && !existingEdgeSet.has(`${primary.id}->${mainRoot.id}`)) {
+                    edges.push({ source: mainRoot.id, target: primary.id, kind: 'hierarchy' });
+                    existingEdgeSet.add(k);
+                    mainRoot.importsOut++;
+                    primary.importsIn++;
+                }
+            }
+        }
+    }
+
     return { nodes, edges };
 }
 
@@ -503,6 +582,241 @@ function resolveTarget(targetRef, currentFullPath, root, fileIdMap, fileBaseMap,
             targetsFound.add(fileBaseMap.get(base));
         }
     }
+}
+
+async function fetchProviderModels(provider, baseUrl, apiKey) {
+    baseUrl = (baseUrl || '').trim().replace(/\/+$/, '');
+    const headers = {};
+    if (apiKey) {
+        headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+    if (provider === 'openrouter') {
+        headers['HTTP-Referer'] = 'https://visionx.dev';
+        headers['X-Title'] = 'VisionX';
+    }
+
+    if (provider === 'ollama') {
+        if (!baseUrl) baseUrl = 'http://localhost:11434';
+        let models = [];
+        
+        // 1. Native Ollama tags
+        try {
+            const resp = await fetch(`${baseUrl}/api/tags`, {
+                headers: apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {},
+                signal: AbortSignal.timeout(6000)
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                if (Array.isArray(data.models)) {
+                    models = data.models.map(m => m.name || m.model).filter(Boolean);
+                }
+            }
+        } catch (e) {}
+
+        // 2. OpenAI-compatible /v1/models (modern Ollama & Cloud proxies)
+        if (models.length === 0) {
+            try {
+                const resp = await fetch(`${baseUrl}/v1/models`, {
+                    headers: apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {},
+                    signal: AbortSignal.timeout(6000)
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const list = data.data || data.models || [];
+                    models = list.map(m => typeof m === 'string' ? m : (m.id || m.name)).filter(Boolean);
+                }
+            } catch (e) {}
+        }
+
+        if (models.length > 0) return models;
+        return ['llama3.3', 'llama3.2', 'deepseek-r1', 'qwen2.5-coder', 'mistral', 'codellama', 'phi4', 'gemma2'];
+    }
+
+    if (provider === 'anthropic') {
+        return [
+            'claude-3-7-sonnet-20250219',
+            'claude-3-5-sonnet-20241022',
+            'claude-3-5-haiku-20241022',
+            'claude-3-opus-20240229'
+        ];
+    }
+
+    if (provider === 'gemini') {
+        if (!apiKey) {
+            return ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+        }
+        try {
+            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`, {
+                signal: AbortSignal.timeout(8000)
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                if (Array.isArray(data.models)) {
+                    return data.models
+                        .map(m => m.name.replace(/^models\//, ''))
+                        .filter(m => m.includes('gemini'));
+                }
+            }
+        } catch (e) {}
+        return ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+    }
+
+    const url = `${baseUrl}/models`;
+    try {
+        const resp = await fetch(url, {
+            headers,
+            signal: AbortSignal.timeout(8000)
+        });
+        if (resp.ok) {
+            const data = await resp.json();
+            const rawList = data.data || data.models || [];
+            const models = rawList.map(m => typeof m === 'string' ? m : (m.id || m.name)).filter(Boolean);
+            if (models.length > 0) return models;
+        }
+    } catch (e) {}
+
+    const defaults = {
+        openrouter: ['anthropic/claude-3.7-sonnet', 'openai/gpt-4o', 'deepseek/deepseek-r1', 'meta-llama/llama-3.3-70b-instruct', 'qwen/qwen-2.5-coder-32b-instruct'],
+        openai: ['gpt-4o', 'gpt-4o-mini', 'o1', 'o3-mini', 'gpt-4-turbo'],
+        deepseek: ['deepseek-chat', 'deepseek-reasoner'],
+        groq: ['llama-3.3-70b-versatile', 'deepseek-r1-distill-llama-70b', 'llama-3.1-8b-instant'],
+        xai: ['grok-2', 'grok-beta', 'grok-2-mini'],
+        mistral: ['codestral-latest', 'mistral-large-latest', 'mistral-small-latest']
+    };
+    return defaults[provider] || ['default-model'];
+}
+
+async function executeChatCompletion({ provider, baseUrl, apiKey, model, prompt, messages }) {
+    baseUrl = (baseUrl || '').trim().replace(/\/+$/, '');
+    model = model || 'claude-3.7-sonnet';
+
+    if (provider === 'ollama') {
+        if (!baseUrl) baseUrl = 'http://localhost:11434';
+        
+        // 1. Try OpenAI-compatible /v1/chat/completions
+        try {
+            const payload = {
+                model,
+                messages: messages || [{ role: 'user', content: prompt }],
+                stream: false
+            };
+            const resp = await fetch(`${baseUrl}/v1/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
+                },
+                body: JSON.stringify(payload),
+                signal: AbortSignal.timeout(60000)
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                return data.choices?.[0]?.message?.content || '';
+            }
+        } catch (e) {}
+
+        // 2. Native Ollama /api/chat
+        try {
+            const resp = await fetch(`${baseUrl}/api/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
+                },
+                body: JSON.stringify({
+                    model,
+                    messages: messages || [{ role: 'user', content: prompt }],
+                    stream: false
+                }),
+                signal: AbortSignal.timeout(60000)
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                return data.message?.content || '';
+            }
+        } catch (e) {}
+
+        // 3. Native Ollama /api/generate
+        const resp = await fetch(`${baseUrl}/api/generate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
+            },
+            body: JSON.stringify({
+                model,
+                prompt: typeof prompt === 'string' ? prompt : (messages?.[messages.length-1]?.content || ''),
+                stream: false
+            }),
+            signal: AbortSignal.timeout(60000)
+        });
+        if (!resp.ok) {
+            throw new Error(`Ollama error (${resp.status}): ${await resp.text()}`);
+        }
+        const data = await resp.json();
+        return data.response || '';
+    }
+
+    if (provider === 'anthropic') {
+        const resp = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify({
+                model,
+                max_tokens: 4096,
+                messages: [{ role: 'user', content: prompt }]
+            }),
+            signal: AbortSignal.timeout(60000)
+        });
+        if (!resp.ok) throw new Error(`Anthropic error (${resp.status}): ${await resp.text()}`);
+        const data = await resp.json();
+        return data.content?.[0]?.text || '';
+    }
+
+    if (provider === 'gemini') {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }]
+            }),
+            signal: AbortSignal.timeout(60000)
+        });
+        if (!resp.ok) throw new Error(`Gemini error (${resp.status}): ${await resp.text()}`);
+        const data = await resp.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    }
+
+    // Standard OpenAI compatible
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
+    };
+    if (provider === 'openrouter') {
+        headers['HTTP-Referer'] = 'https://visionx.dev';
+        headers['X-Title'] = 'VisionX';
+    }
+
+    const resp = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            model,
+            messages: messages || [
+                { role: 'system', content: 'You are VisionX, an advanced autonomous coding companion. Provide precise, clean code solutions.' },
+                { role: 'user', content: prompt }
+            ]
+        }),
+        signal: AbortSignal.timeout(60000)
+    });
+    if (!resp.ok) throw new Error(`${provider} error (${resp.status}): ${await resp.text()}`);
+    const data = await resp.json();
+    return data.choices?.[0]?.message?.content || '';
 }
 
 module.exports = { activate, deactivate: () => {} };

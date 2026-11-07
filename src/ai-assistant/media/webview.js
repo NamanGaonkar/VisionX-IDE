@@ -21,12 +21,14 @@ const customizationsCard = document.getElementById('customizations-card');
 const modelPillBtn = document.getElementById('model-pill-btn');
 const modelPillText = document.getElementById('model-pill-text');
 const modelPopover = document.getElementById('model-popover');
+const popCloseX = document.getElementById('pop-close-x');
 const popProvider = document.getElementById('pop-provider');
 const popBaseUrl = document.getElementById('pop-base-url');
 const popApiKey = document.getElementById('pop-api-key');
 const popModel = document.getElementById('pop-model');
 const popCustomModel = document.getElementById('pop-custom-model');
 const popStatus = document.getElementById('pop-status');
+const popScanBtn = document.getElementById('pop-scan-btn');
 const popSaveBtn = document.getElementById('pop-save-btn');
 const popCancelBtn = document.getElementById('pop-cancel-btn');
 
@@ -35,32 +37,34 @@ const attachedImgTag = document.getElementById('attached-img-tag');
 const activeContextLabel = document.getElementById('active-context-label');
 
 const PROVIDER_DEFAULTS = {
-  openrouter: { url: 'https://openrouter.ai/api/v1', defaultModel: 'anthropic/claude-3.7-sonnet' },
-  custom:     { url: 'https://api.together.xyz/v1', defaultModel: 'meta-llama/llama-3.3-70b-instruct' },
-  openai:     { url: 'https://api.openai.com/v1', defaultModel: 'gpt-4o' },
-  anthropic:  { url: 'https://api.anthropic.com/v1', defaultModel: 'claude-3-7-sonnet-20250219' },
-  gemini:     { url: 'https://generativelanguage.googleapis.com/v1beta', defaultModel: 'gemini-2.5-flash' },
-  deepseek:   { url: 'https://api.deepseek.com/v1', defaultModel: 'deepseek-chat' },
-  groq:       { url: 'https://api.groq.com/openai/v1', defaultModel: 'llama-3.3-70b-versatile' },
-  mistral:    { url: 'https://api.mistral.ai/v1', defaultModel: 'codestral-latest' },
-  together:   { url: 'https://api.together.xyz/v1', defaultModel: 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo' },
-  perplexity: { url: 'https://api.perplexity.ai', defaultModel: 'sonar-pro' },
-  cerebras:   { url: 'https://api.cerebras.ai/v1', defaultModel: 'llama3.3-70b' },
-  fireworks:  { url: 'https://api.fireworks.ai/inference/v1', defaultModel: 'accounts/fireworks/models/llama-v3p3-70b-instruct' },
-  cohere:     { url: 'https://api.cohere.ai/v1', defaultModel: 'command-r-plus' },
-  deepinfra:  { url: 'https://api.deepinfra.com/v1/openai', defaultModel: 'meta-llama/Meta-Llama-3.3-70B-Instruct' },
-  sambanova:  { url: 'https://api.sambanova.ai/v1', defaultModel: 'Meta-Llama-3.3-70B-Instruct' },
-  hyperbolic: { url: 'https://api.hyperbolic.xyz/v1', defaultModel: 'meta-llama/Llama-3.3-70B-Instruct' },
-  novita:     { url: 'https://api.novita.ai/v3/openai', defaultModel: 'meta-llama/llama-3.3-70b-instruct' },
-  ollama:     { url: 'http://localhost:11434', defaultModel: 'llama3.3' },
-  lmstudio:   { url: 'http://localhost:1234/v1', defaultModel: 'local-model' }
+  ollama_cloud: { url: '', defaultModel: 'llama3.3' },
+  ollama:       { url: 'http://localhost:11434', defaultModel: 'llama3.3' },
+  openrouter:   { url: 'https://openrouter.ai/api/v1', defaultModel: 'anthropic/claude-3.7-sonnet' },
+  custom:       { url: 'https://api.together.xyz/v1', defaultModel: 'meta-llama/llama-3.3-70b-instruct' },
+  openai:       { url: 'https://api.openai.com/v1', defaultModel: 'gpt-4o' },
+  anthropic:    { url: 'https://api.anthropic.com/v1', defaultModel: 'claude-3-7-sonnet-20250219' },
+  gemini:       { url: 'https://generativelanguage.googleapis.com/v1beta', defaultModel: 'gemini-2.5-flash' },
+  deepseek:     { url: 'https://api.deepseek.com/v1', defaultModel: 'deepseek-chat' },
+  groq:         { url: 'https://api.groq.com/openai/v1', defaultModel: 'llama-3.3-70b-versatile' },
+  xai:          { url: 'https://api.x.ai/v1', defaultModel: 'grok-2' },
+  mistral:      { url: 'https://api.mistral.ai/v1', defaultModel: 'codestral-latest' },
+  together:     { url: 'https://api.together.xyz/v1', defaultModel: 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo' },
+  perplexity:   { url: 'https://api.perplexity.ai', defaultModel: 'sonar-pro' },
+  cerebras:     { url: 'https://api.cerebras.ai/v1', defaultModel: 'llama3.3-70b' },
+  fireworks:    { url: 'https://api.fireworks.ai/inference/v1', defaultModel: 'accounts/fireworks/models/llama-v3p3-70b-instruct' },
+  cohere:       { url: 'https://api.cohere.ai/v1', defaultModel: 'command-r-plus' },
+  deepinfra:    { url: 'https://api.deepinfra.com/v1/openai', defaultModel: 'meta-llama/Meta-Llama-3.3-70B-Instruct' },
+  sambanova:    { url: 'https://api.sambanova.ai/v1', defaultModel: 'Meta-Llama-3.3-70B-Instruct' },
+  hyperbolic:   { url: 'https://api.hyperbolic.xyz/v1', defaultModel: 'meta-llama/Llama-3.3-70B-Instruct' },
+  novita:       { url: 'https://api.novita.ai/v3/openai', defaultModel: 'meta-llama/llama-3.3-70b-instruct' },
+  lmstudio:     { url: 'http://localhost:1234/v1', defaultModel: 'local-model' }
 };
 
 let currentSettings = {
   provider: 'openrouter',
   baseUrl: 'https://openrouter.ai/api/v1',
   apiKey: '',
-  model: 'Copilot Fusion | Standard',
+  model: 'anthropic/claude-3.7-sonnet',
   customModel: '',
   discoveredModels: []
 };
@@ -73,6 +77,7 @@ let activeSessionId = 'session_1';
 
 let activeContext = { fileName: null, selection: null };
 let attachedImageBase64 = null;
+const pendingRequests = new Map();
 
 // Initial sync
 vscode.postMessage({ type: 'getSettings' });
@@ -81,18 +86,21 @@ setInterval(() => vscode.postMessage({ type: 'getActiveContext' }), 2000);
 
 window.addEventListener('message', event => {
   const msg = event.data;
+  if (!msg) return;
+
   if (msg.type === 'settingsLoaded') {
     if (msg.settings) {
       currentSettings = Object.assign(currentSettings, msg.settings);
     }
-    popProvider.value = currentSettings.provider || 'openrouter';
-    popBaseUrl.value = currentSettings.baseUrl || PROVIDER_DEFAULTS[currentSettings.provider]?.url || '';
+    const prov = currentSettings.provider || 'openrouter';
+    popProvider.value = prov;
+    popBaseUrl.value = currentSettings.baseUrl || PROVIDER_DEFAULTS[prov]?.url || '';
     popApiKey.value = currentSettings.apiKey || '';
     popCustomModel.value = currentSettings.customModel || '';
 
     if (currentSettings.discoveredModels && currentSettings.discoveredModels.length > 0) {
       populateModelDropdown(currentSettings.discoveredModels, currentSettings.model);
-    } else if (currentSettings.apiKey || currentSettings.provider === 'ollama' || currentSettings.provider === 'lmstudio') {
+    } else if (currentSettings.apiKey || prov === 'ollama' || prov === 'ollama_cloud' || prov === 'lmstudio') {
       detectModels();
     }
     updatePill();
@@ -110,6 +118,31 @@ window.addEventListener('message', event => {
     } else {
       activeContextLabel.textContent = 'Ready';
     }
+  } else if (msg.type === 'modelsDiscovered') {
+    if (msg.success && Array.isArray(msg.models) && msg.models.length > 0) {
+      currentSettings.discoveredModels = msg.models;
+      if (!currentSettings.model || !msg.models.includes(currentSettings.model)) {
+        currentSettings.model = msg.models[0];
+      }
+      populateModelDropdown(msg.models, currentSettings.model);
+      updatePill();
+      popStatus.textContent = msg.models.length + ' models recognized successfully.';
+    } else {
+      popStatus.textContent = msg.error ? ('Status: ' + msg.error) : 'No models discovered. You can enter an override below.';
+    }
+  } else if (msg.type === 'chatResponse') {
+    const aiEl = pendingRequests.get(msg.reqId);
+    if (aiEl) {
+      pendingRequests.delete(msg.reqId);
+      if (msg.success && msg.text) {
+        renderMarkdown(aiEl, msg.text);
+        const s = getActiveSession();
+        s.messages.push({ role: 'assistant', content: msg.text });
+        saveSessionsToExtension();
+      } else {
+        aiEl.innerHTML = '<span style="color:#ff5f56;">Error: ' + escapeHtml(msg.error || 'Request failed') + '</span>';
+      }
+    }
   } else if (msg.type === 'runPrompt') {
     promptInput.value = msg.prompt;
     handleSend();
@@ -120,7 +153,7 @@ window.addEventListener('message', event => {
 function getActiveSession() {
   let s = sessions.find(x => x.id === activeSessionId);
   if (!s) {
-    s = sessions[0];
+    s = sessions[0] || { id: 'session_1', title: 'Main Session', messages: [] };
     activeSessionId = s.id;
   }
   return s;
@@ -208,6 +241,7 @@ function renderActiveSessionMessages() {
       renderMarkdown(el, m.content);
     }
   });
+  chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 // Sessions Toggle
@@ -240,11 +274,22 @@ if (cardCloseBtn) {
 // Provider Popover Handlers
 popProvider.onchange = () => {
   const prov = popProvider.value;
-  if (PROVIDER_DEFAULTS[prov]) {
+  if (prov === 'ollama') {
+    popBaseUrl.value = 'http://localhost:11434';
+  } else if (prov === 'ollama_cloud') {
+    if (!popBaseUrl.value || popBaseUrl.value === 'http://localhost:11434') {
+      popBaseUrl.value = '';
+    }
+    popBaseUrl.placeholder = 'https://your-remote-ollama-instance.com';
+  } else if (PROVIDER_DEFAULTS[prov]) {
     popBaseUrl.value = PROVIDER_DEFAULTS[prov].url;
   }
   detectModels();
 };
+
+if (popScanBtn) {
+  popScanBtn.onclick = () => detectModels();
+}
 
 popApiKey.onblur = () => {
   if (popApiKey.value.trim()) {
@@ -260,6 +305,11 @@ function togglePopover() {
 modelPillBtn.onclick = togglePopover;
 if (headerSettingsBtn) {
   headerSettingsBtn.onclick = togglePopover;
+}
+if (popCloseX) {
+  popCloseX.onclick = () => {
+    modelPopover.style.display = 'none';
+  };
 }
 
 popCancelBtn.onclick = () => {
@@ -278,63 +328,25 @@ popSaveBtn.onclick = () => {
 };
 
 function updatePill() {
-  const active = currentSettings.customModel || currentSettings.model || 'Copilot Fusion | Standard';
+  const active = currentSettings.customModel || currentSettings.model || 'VisionX Fusion | Standard';
   const name = active.split('/').pop().replace(/-20\d\d\d\d\d\d/g, '');
   modelPillText.textContent = name;
 }
 
-async function detectModels() {
+function detectModels() {
   const provider = popProvider.value;
   const baseUrl = (popBaseUrl.value.trim() || PROVIDER_DEFAULTS[provider]?.url || '').replace(/\/+$/, '');
-  const key = popApiKey.value.trim();
+  const apiKey = popApiKey.value.trim();
 
-  if (!key && provider !== 'ollama' && provider !== 'lmstudio') {
-    popStatus.textContent = 'Enter API key above to discover models.';
-    return;
-  }
+  popStatus.textContent = 'Scanning models from ' + provider.toUpperCase() + '...';
 
-  popStatus.textContent = 'Discovering models from ' + provider.toUpperCase() + '...';
-
-  try {
-    let models = [];
-    if (provider === 'ollama') {
-      const res = await fetch(baseUrl + '/api/tags');
-      if (res.ok) {
-        const data = await res.json();
-        models = (data.models || []).map(m => m.name);
-      }
-    } else if (provider === 'anthropic') {
-      models = ['claude-3-7-sonnet-20250219', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022'];
-    } else if (provider === 'gemini') {
-      models = ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'];
-    } else {
-      const headers = { 'Authorization': 'Bearer ' + key };
-      if (provider === 'openrouter') {
-        headers['HTTP-Referer'] = 'https://visionx.dev';
-        headers['X-Title'] = 'VisionX';
-      }
-      const res = await fetch(baseUrl + '/models', { headers });
-      if (res.ok) {
-        const data = await res.json();
-        const rawList = data.data || data.models || [];
-        models = rawList.map(m => typeof m === 'string' ? m : (m.id || m.name)).filter(Boolean);
-      }
-    }
-
-    if (models && models.length > 0) {
-      currentSettings.discoveredModels = models;
-      if (!currentSettings.model || !models.includes(currentSettings.model)) {
-        currentSettings.model = models[0];
-      }
-      populateModelDropdown(models, currentSettings.model);
-      updatePill();
-      popStatus.textContent = models.length + ' models recognized successfully.';
-    } else {
-      popStatus.textContent = 'No models returned. You can enter an override below.';
-    }
-  } catch (e) {
-    popStatus.textContent = 'Status: ' + e.message;
-  }
+  // Request models from Node extension backend (100% bypasses browser webview CORS!)
+  vscode.postMessage({
+    type: 'scanModels',
+    provider: (provider === 'ollama_cloud' ? 'ollama' : provider),
+    baseUrl: baseUrl,
+    apiKey: apiKey
+  });
 }
 
 function populateModelDropdown(models, selected) {
@@ -375,7 +387,7 @@ promptInput.addEventListener('keydown', (e) => {
   }
 });
 
-async function handleSend() {
+function handleSend() {
   const text = promptInput.value.trim();
   if (!text && !attachedImageBase64) return;
   promptInput.value = '';
@@ -387,110 +399,51 @@ async function handleSend() {
   appendUserMsg(text, true);
   const aiMsgEl = appendAIMsg('Thinking...', false);
 
-  try {
-    const chosenModel = currentSettings.customModel || currentSettings.model || popModel.value || 'claude-3.7-sonnet';
-    const baseUrl = (currentSettings.baseUrl || PROVIDER_DEFAULTS[currentSettings.provider]?.url || '').replace(/\/+$/, '');
-    let endpoint = '';
-    let headers = { 'Content-Type': 'application/json' };
-    let body = {};
+  const chosenModel = currentSettings.customModel || currentSettings.model || popModel.value || 'claude-3.7-sonnet';
+  const reqId = 'req_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+  pendingRequests.set(reqId, aiMsgEl);
 
-    if (currentSettings.provider === 'ollama') {
-      endpoint = baseUrl + '/api/generate';
-      body = {
-        model: chosenModel,
-        prompt: text + (activeContext.selection ? '\n\nCode Context (' + (activeContext.fileName || 'file') + '):\n' + activeContext.selection : ''),
-        stream: false
-      };
-    } else if (currentSettings.provider === 'anthropic') {
-      endpoint = 'https://api.anthropic.com/v1/messages';
-      headers['x-api-key'] = currentSettings.apiKey;
-      headers['anthropic-version'] = '2023-06-01';
-      body = {
-        model: chosenModel,
-        max_tokens: 4096,
-        messages: [{ role: 'user', content: text + (activeContext.selection ? '\n\nCode Context:\n' + activeContext.selection : '') }]
-      };
-    } else if (currentSettings.provider === 'gemini') {
-      endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/' + chosenModel + ':generateContent?key=' + currentSettings.apiKey;
-      body = {
-        contents: [{ parts: [{ text: text + (activeContext.selection ? '\n\nCode Context:\n' + activeContext.selection : '') }] }]
-      };
-    } else {
-      endpoint = baseUrl + '/chat/completions';
-      if (currentSettings.apiKey) {
-        headers['Authorization'] = 'Bearer ' + currentSettings.apiKey;
-      }
-      if (currentSettings.provider === 'openrouter') {
-        headers['HTTP-Referer'] = 'https://visionx.dev';
-        headers['X-Title'] = 'VisionX';
-      }
+  let effectiveProvider = currentSettings.provider || 'openrouter';
+  if (effectiveProvider === 'ollama_cloud') effectiveProvider = 'ollama';
 
-      const userContent = [];
-      if (attachedImageBase64) {
-        userContent.push({ type: 'image_url', image_url: { url: attachedImageBase64 } });
-      }
-      let promptWithContext = text;
-      if (activeContext.selection) {
-        promptWithContext += '\n\n[Active Code Context in ' + (activeContext.fileName || 'editor') + ']:\n' + activeContext.selection;
-      }
-      userContent.push({ type: 'text', text: promptWithContext });
-
-      body = {
-        model: chosenModel,
-        messages: [
-          { role: 'system', content: 'You are VisionX, an advanced autonomous coding companion. Provide precise, clean, idiomatic code solutions without fluff.' },
-          { role: 'user', content: userContent }
-        ]
-      };
-    }
-
-    if (!currentSettings.apiKey && currentSettings.provider !== 'ollama' && currentSettings.provider !== 'lmstudio') {
-      aiMsgEl.innerHTML = 'Please click the model pill below and enter your API key to activate AI responses.';
-      return;
-    }
-
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(body)
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      aiMsgEl.innerHTML = 'Error: ' + err;
-      return;
-    }
-
-    const data = await res.json();
-    let reply = '';
-    if (currentSettings.provider === 'ollama') {
-      reply = data.response || '';
-    } else if (currentSettings.provider === 'anthropic') {
-      reply = data.content && data.content[0] ? data.content[0].text : '';
-    } else if (currentSettings.provider === 'gemini') {
-      reply = data.candidates && data.candidates[0]?.content?.parts?.[0]?.text || '';
-    } else {
-      reply = data.choices && data.choices[0]?.message?.content || '';
-    }
-
-    // Save to active session
-    const current = getActiveSession();
-    current.messages.push({ role: 'assistant', content: reply });
-    saveSessionsToExtension();
-
-    renderMarkdown(aiMsgEl, reply);
-  } catch (e) {
-    aiMsgEl.innerHTML = 'Connection error: ' + e.message;
+  let effectiveBaseUrl = currentSettings.baseUrl || PROVIDER_DEFAULTS[currentSettings.provider]?.url || '';
+  if (effectiveProvider === 'ollama' && !effectiveBaseUrl) {
+    effectiveBaseUrl = 'http://localhost:11434';
   }
+
+  // Build message history from current session
+  const activeSession = getActiveSession();
+  const history = [];
+  if (activeSession.messages) {
+    activeSession.messages.slice(-8).forEach(m => {
+      history.push({ role: m.role, content: m.content });
+    });
+  }
+
+  let fullPrompt = text;
+  if (activeContext.selection) {
+    fullPrompt += '\n\n[Code Context in ' + (activeContext.fileName || 'file') + ']:\n' + activeContext.selection;
+  }
+  history.push({ role: 'user', content: fullPrompt });
+
+  // Dispatched to Node extension backend
+  vscode.postMessage({
+    type: 'sendChat',
+    reqId: reqId,
+    provider: effectiveProvider,
+    baseUrl: effectiveBaseUrl,
+    apiKey: currentSettings.apiKey,
+    model: chosenModel,
+    prompt: fullPrompt,
+    messages: history,
+    imageBase64: attachedImageBase64
+  });
+
+  attachedImageBase64 = null;
+  attachedImgTag.style.display = 'none';
 }
 
-function appendUserMsg(text, saveToHistory) {
-  if (saveToHistory) {
-    const current = getActiveSession();
-    current.messages.push({ role: 'user', content: text });
-    saveSessionsToExtension();
-  }
-
+function appendUserMsg(text, saveToHistory = true) {
   const row = document.createElement('div');
   row.className = 'msg-row';
   const bubble = document.createElement('div');
@@ -499,80 +452,107 @@ function appendUserMsg(text, saveToHistory) {
   row.appendChild(bubble);
   chatMessages.appendChild(row);
   chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  if (saveToHistory) {
+    const s = getActiveSession();
+    s.messages.push({ role: 'user', content: text });
+    saveSessionsToExtension();
+  }
 }
 
-function appendAIMsg(initialText) {
+function appendAIMsg(text = '', saveToHistory = false) {
   const row = document.createElement('div');
   row.className = 'msg-row';
   const bubble = document.createElement('div');
   bubble.className = 'msg-ai';
-  bubble.textContent = initialText;
+  bubble.textContent = text;
   row.appendChild(bubble);
   chatMessages.appendChild(row);
   chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  if (saveToHistory && text) {
+    const s = getActiveSession();
+    s.messages.push({ role: 'assistant', content: text });
+    saveSessionsToExtension();
+  }
   return bubble;
 }
 
-function renderMarkdown(element, mdText) {
-  element.innerHTML = '';
-  const lines = mdText.split('\n');
-  let inCode = false;
-  let codeLang = '';
-  let codeBuffer = [];
+function escapeHtml(str) {
+  return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (line.startsWith('```')) {
-      if (inCode) {
-        const container = document.createElement('div');
-        container.className = 'code-container';
-
-        const top = document.createElement('div');
-        top.className = 'code-top';
-        top.innerHTML = '<span>' + (codeLang || 'code') + '</span>';
-
-        const actions = document.createElement('div');
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'code-action-btn';
-        copyBtn.textContent = 'Copy';
-        const codeString = codeBuffer.join('\n');
-        copyBtn.onclick = () => vscode.postMessage({ type: 'copyClipboard', code: codeString });
-
-        const insertBtn = document.createElement('button');
-        insertBtn.className = 'code-action-btn';
-        insertBtn.textContent = 'Insert';
-        insertBtn.onclick = () => vscode.postMessage({ type: 'insertCode', code: codeString });
-
-        actions.appendChild(copyBtn);
-        actions.appendChild(insertBtn);
-        top.appendChild(actions);
-
-        const pre = document.createElement('pre');
-        const code = document.createElement('code');
-        code.textContent = codeString;
-        pre.appendChild(code);
-
-        container.appendChild(top);
-        container.appendChild(pre);
-        element.appendChild(container);
-
-        codeBuffer = [];
-        inCode = false;
-      } else {
-        inCode = true;
-        codeLang = line.replace('```', '').trim();
-      }
-    } else if (inCode) {
-      codeBuffer.push(line);
-    } else {
-      if (line.trim()) {
-        const p = document.createElement('p');
-        p.style.margin = '4px 0';
-        p.textContent = line;
-        element.appendChild(p);
-      }
-    }
+function renderMarkdown(element, rawText) {
+  if (!rawText) {
+    element.innerHTML = '';
+    return;
   }
 
+  const codeBlockRegex = /```([a-zA-Z0-9_\-\+]*)\n([\s\S]*?)```/g;
+  let html = '';
+  let lastIndex = 0;
+  let match;
+
+  while ((match = codeBlockRegex.exec(rawText)) !== null) {
+    const preText = rawText.substring(lastIndex, match.index);
+    html += formatPlainText(preText);
+
+    const lang = match[1] || 'code';
+    const code = match[2];
+    const encoded = encodeURIComponent(code);
+
+    html += '<div class="code-container">' +
+      '<div class="code-top">' +
+        '<span>' + escapeHtml(lang) + '</span>' +
+        '<div>' +
+          '<button class="code-action-btn" onclick="insertCode(\'' + encoded + '\')">Insert</button>' +
+          '<button class="code-action-btn" onclick="copyCode(\'' + encoded + '\')">Copy</button>' +
+        '</div>' +
+      '</div>' +
+      '<pre><code>' + escapeHtml(code) + '</code></pre>' +
+    '</div>';
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  const remaining = rawText.substring(lastIndex);
+  html += formatPlainText(remaining);
+
+  element.innerHTML = html;
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
+
+function formatPlainText(txt) {
+  if (!txt) return '';
+  let str = escapeHtml(txt);
+  str = str.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  str = str.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  str = str.replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">$1</code>');
+  str = str.replace(/\n/g, '<br>');
+  return str;
+}
+
+window.insertCode = function(encoded) {
+  const code = decodeURIComponent(encoded);
+  vscode.postMessage({ type: 'insertCode', code });
+};
+
+window.copyCode = function(encoded) {
+  const code = decodeURIComponent(encoded);
+  vscode.postMessage({ type: 'copyClipboard', code });
+};
+
+window.quickPrompt = function(promptText) {
+  promptInput.value = promptText;
+  handleSend();
+};
+
+// Mode switcher
+let activeAgentMode = 'agent';
+document.querySelectorAll('.mode-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.mode-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    activeAgentMode = pill.getAttribute('data-mode');
+  });
+});
