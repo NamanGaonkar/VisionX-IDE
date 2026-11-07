@@ -17,7 +17,7 @@ ICON_PATH = BUILD_DIR / "icons" / "visionx.ico"
 LOGO_SVG_PATH = BASE_DIR / "src" / "branding" / "visionx-logo.svg"
 
 print("==================================================")
-print("     VisionX IDE v1.7.4 - Built-in Agentic Chat ")
+print("     VisionX IDE v1.7.5 - Built-in Agentic Chat ")
 print("==================================================")
 
 # 1. Clean and extract
@@ -319,6 +319,25 @@ if ext_dir.exists():
             code = code.replace(old_is_enabled, new_is_enabled)
             print("Neutralized PostHog telemetry in Cline extension.js")
         code = code.replace('telemetrySetting:void 0', 'telemetrySetting:"disabled"')
+
+        # Neutralize telemetry warning toast completely
+        old_toast = 'async updateTelemetryState(e){(await Lr.env.getTelemetrySettings({})).isEnabled===2&&e&&Lr.window.showMessage({type:2,message:"Cline error and usage reporting is enabled, but IDE telemetry is disabled. To enable error and usage reporting for this extension, enable telemetry in IDE settings.",options:{items:["Open Settings"]}}).then(i=>{i.selectedOption==="Open Settings"&&Lr.window.openSettings({query:"telemetry.telemetryLevel"})})}'
+        new_toast = 'async updateTelemetryState(e){return;}'
+        if old_toast in code:
+            code = code.replace(old_toast, new_toast)
+            print("Silenced updateTelemetryState warning toast in Cline extension.js")
+        else:
+            import re
+            code = re.sub(r'async updateTelemetryState\(e\)\{[^}]*showMessage\(\{[^}]*Cline error and usage reporting[^}]*\}\)[^}]*\}', 'async updateTelemetryState(e){return;}', code)
+            code = code.replace('"Cline error and usage reporting is enabled, but IDE telemetry is disabled. To enable error and usage reporting for this extension, enable telemetry in IDE settings."', '""')
+
+        # Strip cline and cline-pass from extension.js listProviders()
+        old_list = 'listProviders(){return Array.from(this.providers.values()).map(e=>this.getManifest(e.manifest.id)).filter(e=>e!==void 0)}'
+        new_list = 'listProviders(){return Array.from(this.providers.values()).map(e=>this.getManifest(e.manifest.id)).filter(e=>e!==void 0&&e.id!=="cline"&&e.id!=="cline-pass"&&!e.name?.includes("Cline"))}'
+        if old_list in code:
+            code = code.replace(old_list, new_list)
+            print("Filtered cline and cline-pass from listProviders in extension.js")
+
         cline_ext_js.write_text(code, encoding="utf-8")
 
     # Patch Chat Webview UI: strip Account, remove Cline provider, replace robot logo with VisionX logo, remove socials, rebrand
@@ -331,7 +350,13 @@ if ext_dir.exists():
         # 1. Strip Account nav button from chat header
         wv_code = re.sub(r'\{id:"account",name:"Account",tooltip:"Account",icon:\w+,navigate:\w+\},?', '', wv_code)
 
-        # 2. Strip cline and cline-pass from provider selection dropdown (keep all other providers intact)
+        # 2. Strip cline and cline-pass from provider selection dropdown & provider list (keep all other providers intact)
+        old_d1e = 'const s=await Pr.listProviders(Ji.create());return t(s.providers),s.providers'
+        new_d1e = 'const s=await Pr.listProviders(Ji.create());const f_prov=s.providers.filter(p=>p.id!=="cline"&&p.id!=="cline-pass"&&!p.name?.includes("Cline"));return t(f_prov),f_prov'
+        if old_d1e in wv_code:
+            wv_code = wv_code.replace(old_d1e, new_d1e)
+            print("Filtered provider catalog in D1e() in webview index.js")
+
         wv_code = wv_code.replace(
             'w=z.useMemo(()=>{let A=u.map(B=>({value:B.id,label:B.name}));',
             'w=z.useMemo(()=>{let A=u.filter(B=>B.id!=="cline"&&B.id!=="cline-pass"&&!B.name.includes("Cline")).map(B=>({value:B.id,label:B.name}));'
@@ -343,7 +368,14 @@ if ext_dir.exists():
             '" VisionX uses complex prompts, so behavior can vary across models. Less capable models may not work as expected."'
         )
 
-        # 4. Settings About page full rebranding
+        # 4. Settings About page full rebranding & complete removal of Community & Support and dots
+        old_comm = 'x.jsx("h3",{className:"text-md font-semibold",children:"Community & Support"}),x.jsxs("p",{children:[x.jsx(xa,{style:{display:"none"},children:"X"})," • ",x.jsx(xa,{style:{display:"none"},children:"Discord"})," • ",x.jsx(xa,{style:{display:"none"},children:""})]}),'
+        if old_comm in wv_code:
+            wv_code = wv_code.replace(old_comm, 'null,')
+            print("Removed Community & Support and lingering dots from Settings About page")
+        else:
+            wv_code = re.sub(r'x\.jsx\("h3",\{className:"text-md font-semibold",children:"Community & Support"\}\),x\.jsxs\("p",\{children:\[.*?\]\}\),?', 'null,', wv_code)
+
         wv_code = wv_code.replace('children:["Cline v",e', 'children:["VisionX Agentic Chat v",e')
         wv_code = wv_code.replace(
             'An AI assistant that can use your CLI and Editor. Cline can handle complex software development tasks step-by-step with tools that let him create & edit files, explore large projects, use the browser, and execute terminal commands (after you grant permission).',
@@ -363,7 +395,37 @@ if ext_dir.exists():
         wv_code = wv_code.replace('href:"https://www.reddit.com/r/cline/"', 'style:{display:"none"}')
         wv_code = wv_code.replace('" r/cline"', '""')
 
-        # 6. Rebrand user-facing headings and first-run setup prompts
+        # 6. Remove Cloud sessions toggle in Settings
+        old_cloud_toggle = 'x.jsx(v8,{checked:h,description:"Run Cline on your GitHub repositories in secure cloud sandboxes. Adds a Cloud option to the new task composer. Requires a Cline account with GitHub connected.",id:"cloud-sessions",isVisible:!!p,label:"Cloud",onChange:g=>ud("cloudSessionsEnabled",g)})'
+        if old_cloud_toggle in wv_code:
+            wv_code = wv_code.replace(old_cloud_toggle, 'null')
+            print("Removed Cloud toggle from Settings in webview index.js")
+        else:
+            wv_code = wv_code.replace('id:"cloud-sessions",isVisible:!!p', 'id:"cloud-sessions",isVisible:false')
+
+        # 7. Rebrand Feature Tips and user-facing action strings
+        wv_code = wv_code.replace('"Show rotating tips during the thinking phase to help you discover Cline features."', '"Show rotating tips during the thinking phase to help you discover VisionX features."')
+        wv_code = wv_code.replace('"Cline wants to execute this command:"', '"VisionX wants to execute this command:"')
+        wv_code = wv_code.replace('"Cline wants to edit this file:"', '"VisionX wants to edit this file:"')
+        wv_code = wv_code.replace('"Cline is creating patches to edit this file:"', '"VisionX is creating patches to edit this file:"')
+        wv_code = wv_code.replace('"Cline wants to create a new file:"', '"VisionX wants to create a new file:"')
+        wv_code = wv_code.replace('"Cline wants to delete this file:"', '"VisionX wants to delete this file:"')
+        wv_code = wv_code.replace('"Cline wants to read this file:"', '"VisionX wants to read this file:"')
+        wv_code = wv_code.replace('"Cline wants to search this directory for "', '"VisionX wants to search this directory for "')
+        wv_code = wv_code.replace('"Cline has a question:"', '"VisionX has a question:"')
+        wv_code = wv_code.replace('"Cline is having trouble..."', '"VisionX is having trouble..."')
+        wv_code = wv_code.replace('"Cline is using the browser:"', '"VisionX is using the browser:"')
+        wv_code = wv_code.replace('"Cline wants to use the browser:"', '"VisionX wants to use the browser:"')
+        wv_code = wv_code.replace('"The language that Cline should use for communication."', '"The language that VisionX should use for communication."')
+        wv_code = wv_code.replace('"Choose whether Cline runs commands in the VS Code terminal or a background process."', '"Choose whether VisionX runs commands in the terminal or a background process."')
+        wv_code = wv_code.replace('"Failed to create task for Cline"', '"Failed to create task for VisionX"')
+        wv_code = wv_code.replace('"Ask Cline to Resolve"', '"Ask VisionX to Resolve"')
+        wv_code = wv_code.replace('"Cline wants to use a subagent:"', '"VisionX wants to use a subagent:"')
+        wv_code = wv_code.replace('"Cline wants to use subagents:"', '"VisionX wants to use subagents:"')
+        wv_code = wv_code.replace('"Please support Cline by"', '"Please support VisionX by"')
+        wv_code = wv_code.replace('" with Cline"', '" with VisionX"')
+
+        # 8. Rebrand user-facing headings and first-run setup prompts
         wv_code = wv_code.replace('"What can I do for you?"', '"What can VisionX do for you?"')
         wv_code = wv_code.replace('"Sign up with Cline"', '"VisionX Agentic Chat"')
         wv_code = wv_code.replace('"Welcome to Cline"', '"Welcome to VisionX Agentic Chat"')
@@ -946,34 +1008,46 @@ glass_css = """
   border-radius: 6px !important;
 }
 
-/* Glowing VisionX Chat Toggle Button in Title Bar Command Center */
+/* Glowing VisionX Chat Toggle Button in Title Bar Command Center (Outside Search Box) */
 .monaco-workbench .part.titlebar .codicon-comment-discussion,
 .monaco-workbench .part.titlebar .command-center .action-item [class*="codicon-comment-discussion"],
 .monaco-workbench .part.titlebar .command-center .action-item:has([class*="chat-v-icon"]),
 .monaco-workbench .part.titlebar .command-center .action-item [class*="chat-v-icon"],
-.monaco-workbench .part.titlebar [id*="claude-dev.SidebarProvider.focus"],
+.monaco-workbench .part.titlebar .command-center .action-item [class*="chatSparkle"],
+.monaco-workbench .part.titlebar .command-center .action-item:has([class*="chatSparkle"]),
+.monaco-workbench .part.titlebar .action-item:has(a[aria-label*="VisionX Agentic Chat"]),
 .monaco-workbench .part.titlebar .action-item a[aria-label*="VisionX Agentic Chat"],
+.monaco-workbench .part.titlebar [id*="claude-dev.SidebarProvider.focus"],
 .monaco-workbench .part.titlebar .action-item a[aria-label*="VisionX Chat"] {
   background-image: url("{logo_b64_url}") !important;
   background-size: 16px !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
-  width: 22px !important;
-  height: 22px !important;
+  width: 24px !important;
+  height: 24px !important;
   border-radius: 6px !important;
+  margin: 0 4px !important;
   transition: all 0.2s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 .monaco-workbench .part.titlebar .codicon-comment-discussion::before,
-.monaco-workbench .part.titlebar .command-center .action-item [class*="codicon-comment-discussion"]::before {
+.monaco-workbench .part.titlebar .command-center .action-item [class*="codicon-comment-discussion"]::before,
+.monaco-workbench .part.titlebar .action-item a[aria-label*="VisionX Agentic Chat"]::before,
+.monaco-workbench .part.titlebar .action-item a[aria-label*="VisionX Agentic Chat"]::after {
   content: "" !important;
   display: none !important;
 }
 .monaco-workbench.vs-dark .part.titlebar .command-center .action-item:has([class*="chat-v-icon"]):hover,
 .monaco-workbench.hc-black .part.titlebar .command-center .action-item:has([class*="chat-v-icon"]):hover,
 .monaco-workbench.vs-dark .part.titlebar .action-item:has(.codicon-comment-discussion):hover,
+.monaco-workbench.vs-dark .part.titlebar .action-item:has(a[aria-label*="VisionX Agentic Chat"]):hover,
+.monaco-workbench.vs-dark .part.titlebar .action-item a[aria-label*="VisionX Agentic Chat"]:hover,
+.monaco-workbench.hc-black .part.titlebar .action-item a[aria-label*="VisionX Agentic Chat"]:hover,
 .monaco-workbench.vs-dark .part.titlebar [id*="claude-dev.SidebarProvider.focus"]:hover {
-  background: rgba(255, 85, 0, 0.22) !important;
-  box-shadow: 0 0 12px rgba(255, 85, 0, 0.45) !important;
+  background-color: rgba(255, 85, 0, 0.25) !important;
+  box-shadow: 0 0 10px rgba(255, 85, 0, 0.5) !important;
 }
 """
 
@@ -1095,12 +1169,12 @@ if wb_js.exists():
             txt = txt.replace(old_acc, new_acc)
             print("Disabled Accounts/Profile activity bar registration in workbench.desktop.main.js")
 
-        # Add VisionX Agentic Chat toggle button to CommandCenterCenter (in search bar)
-        cmd_target = 'De.appendMenuItem(F.CommandCenterCenter,{submenu:F.DebugToolBar,title:"Debug",icon:A.debug,order:1,when:D.and(Fl,CYn)}'
-        chat_cmd_menu = ');De.appendMenuItem(F.CommandCenterCenter,{command:{id:"claude-dev.SidebarProvider.focus",title:"VisionX Agentic Chat",icon:A.chatSparkle},order:101}'
+        # Add VisionX Agentic Chat toggle button OUTSIDE search bar in CommandCenter (order 102)
+        cmd_target = 'De.appendMenuItem(F.CommandCenter,{submenu:F.CommandCenterCenter,title:d(8632,null),icon:A.shield,order:101});'
+        chat_cmd_menu = 'De.appendMenuItem(F.CommandCenter,{command:{id:"claude-dev.SidebarProvider.focus",title:"VisionX Agentic Chat"},icon:A.chatSparkle,order:102});'
         if cmd_target in txt and chat_cmd_menu not in txt:
             txt = txt.replace(cmd_target, cmd_target + chat_cmd_menu)
-            print("Added VisionX Agentic Chat toggle icon to CommandCenterCenter")
+            print("Added VisionX Agentic Chat toggle button outside search bar in CommandCenter")
             
         # Filter out Accounts from titlebar action toolbar
         old_tb_acc = "T2(this.globalToolbarMenu.getActions(),n,r=>r===MDo)"
@@ -1233,8 +1307,8 @@ try:
         "--set-version-string", "LegalCopyright", "Copyright (C) 2026 VisionX Contributors",
         "--set-version-string", "InternalName", "VisionX",
         "--set-version-string", "OriginalFilename", "VisionX.exe",
-        "--set-file-version", "1.7.4.0",
-        "--set-product-version", "1.7.4.0"
+        "--set-file-version", "1.7.5.0",
+        "--set-product-version", "1.7.5.0"
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode == 0:
@@ -1245,5 +1319,5 @@ except Exception as e:
     print("Could not run rcedit:", e)
 
 print("==================================================")
-print(" VisionX IDE v1.7.4 build completed successfully! ")
+print(" VisionX IDE v1.7.5 build completed successfully! ")
 print("==================================================")

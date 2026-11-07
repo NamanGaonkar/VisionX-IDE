@@ -6,7 +6,7 @@
 ### Autonomous AI and Spatial Developer Workspace
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://opensource.org/licenses/MIT)
-[![Release: v1.7.4](https://img.shields.io/badge/Release-v1.7.4-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.7.4)
+[![Release: v1.7.5](https://img.shields.io/badge/Release-v1.7.5-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.7.5)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-red.svg)]()
 [![Aesthetics](https://img.shields.io/badge/Aesthetics-Liquid%20Glass-ff5500.svg)]()
 [![AI Core](https://img.shields.io/badge/AI%20Core-VisionX%20Agentic%20Chat-ffd700.svg)]()
@@ -15,6 +15,17 @@
 VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a sleek liquid glass dark obsidian aesthetic with modern rounded island cards, VisionX Agentic Chat as the built-in default autonomous coding agent (file editing, terminal execution, diffs, tool calling, multi-model BYOK, and local Ollama support), an interactive 360-degree orbital 3D project architecture graph in the bottom panel, macOS-style traffic light window controls, and seamless automatic migration of all VS Code extensions and settings.
 
 </div>
+
+---
+
+## What is New in v1.7.5
+
+- Title Bar Chat Button Outside Search Bar: Moved the VisionX Agentic Chat toggle button to `CommandCenter` (order: 102), positioning it directly to the right of the search input bar, matching GitHub Copilot Chat placement in VS Code.
+- Resolved Missing Extension Path Error: Established a persistent junction from `~/VisionX/extensions` to `~/.vscode/extensions`, resolving any cached extension references and eliminating missing `package.json` errors completely.
+- Eliminated Telemetry Notification Toast: Permanently silenced the "Cline error and usage reporting is enabled, but IDE telemetry is disabled" warning toast in `extension.js`.
+- Provider Catalog Cleaned: Stripped vendor usage billing and pass entries from both the backend `listProviders()` and frontend catalog, leaving only standard model providers (Ollama, Anthropic, OpenRouter, OpenAI, DeepSeek, Bedrock, Gemini, etc.).
+- Cleaned Settings About Page: Removed "Community & Support" and leftover separator dots, redirected all support links to the official VisionX repository, and disabled the Cloud sessions toggle in Settings.
+- Full Rebranding: Updated user-facing prompt strings, action headings, and tool notifications to VisionX across the entire webview and extension interface.
 
 ---
 

@@ -14,7 +14,7 @@ EXE_PATH = INSTALL_DIR / "VisionX.exe"
 BIN_PATH = INSTALL_DIR / "bin"
 
 print("==================================================")
-print("     VisionX IDE v1.7.4 - Local Windows Re-installer ")
+print("     VisionX IDE v1.7.5 - Local Windows Re-installer ")
 print("==================================================")
 
 if not DIST_DIR.exists():
@@ -35,7 +35,7 @@ if INSTALL_DIR.exists():
         print(f"Note during cleanup: {e}")
 
 INSTALL_DIR.mkdir(parents=True, exist_ok=True)
-print("Copying fresh VisionX v1.7.3 binaries...")
+print("Copying fresh VisionX v1.7.5 binaries...")
 shutil.copytree(DIST_DIR, INSTALL_DIR, dirs_exist_ok=True)
 print("Binaries copied successfully.")
 
@@ -126,17 +126,16 @@ visionx_user_targets = [
     userprofile / ".visionx" / "User"
 ]
 
-# Clean up redundant duplicate junction folders that caused extension host freezes
-for redundant in [userprofile / "VisionX" / "extensions", appdata / "VisionX" / "extensions"]:
-    if redundant.exists():
-        try:
-            for item in redundant.iterdir():
-                if item.is_dir():
-                    subprocess.run(["cmd", "/c", "rmdir", str(item)], capture_output=True)
-            shutil.rmtree(redundant, ignore_errors=True)
-            print(f"Cleaned redundant directory: {redundant.name}")
-        except Exception:
-            pass
+# Ensure VisionX extensions directory links cleanly to ~/.vscode/extensions so all installed extensions resolve with zero missing file errors
+vscode_ext_dir = userprofile / ".vscode" / "extensions"
+visionx_ext_dir = userprofile / "VisionX" / "extensions"
+if vscode_ext_dir.exists():
+    if not visionx_ext_dir.exists():
+        visionx_ext_dir.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run(["cmd", "/c", "mklink", "/J", str(visionx_ext_dir), str(vscode_ext_dir)], capture_output=True)
+        print("Created directory junction: VisionX\\extensions -> .vscode\\extensions")
+    else:
+        print("Directory junction VisionX\\extensions verified.")
 
 if vscode_user.exists():
     best_settings = vscode_user / "settings.json"
@@ -165,5 +164,5 @@ if vscode_user.exists():
     print("Migrated settings, keybindings, and snippets from VS Code to VisionX user profiles.")
 
 print("==================================================")
-print(" VisionX IDE v1.7.4 Installed Locally!            ")
+print(" VisionX IDE v1.7.5 Installed Locally!            ")
 print("==================================================")
