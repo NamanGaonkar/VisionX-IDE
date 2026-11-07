@@ -6,15 +6,25 @@
 ### Autonomous AI and Spatial Developer Workspace
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://opensource.org/licenses/MIT)
-[![Release: v1.7.3](https://img.shields.io/badge/Release-v1.7.3-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.7.3)
+[![Release: v1.7.4](https://img.shields.io/badge/Release-v1.7.4-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.7.4)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-red.svg)]()
 [![Aesthetics](https://img.shields.io/badge/Aesthetics-Liquid%20Glass-ff5500.svg)]()
-[![AI Engine](https://img.shields.io/badge/AI%20Core-VisionX%20Agentic%20Chat-ffd700.svg)]()
+[![AI Core](https://img.shields.io/badge/AI%20Core-VisionX%20Agentic%20Chat-ffd700.svg)]()
 [![Extensions](https://img.shields.io/badge/Extensions-Open%20VSX-blue.svg)](https://open-vsx.org/)
 
 VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a sleek liquid glass dark obsidian aesthetic with modern rounded island cards, VisionX Agentic Chat as the built-in default autonomous coding agent (file editing, terminal execution, diffs, tool calling, multi-model BYOK, and local Ollama support), an interactive 360-degree orbital 3D project architecture graph in the bottom panel, macOS-style traffic light window controls, and seamless automatic migration of all VS Code extensions and settings.
 
 </div>
+
+---
+
+## What is New in v1.7.4
+
+- Complete Rebranding of VisionX Agentic Chat: Fully rebranded About dialog to "VisionX Agentic Chat v4.1.26", updated descriptions to VisionX, redirected documentation and issue links to the official VisionX repository, and updated provider prompt notes.
+- Provider Selection Cleanup: Stripped vendor usage billing and pass entries from the API Provider dropdown in Settings, keeping all real model providers (OpenAI, Anthropic, OpenRouter, DeepSeek, Ollama, Gemini, Bedrock, etc.) clean and unencumbered.
+- Search Bar Chat Toggle Button: Added the chat toggle icon with sparkles directly inside the Command Center search bar, matching the user reference design and enabling instant chat access from the title bar.
+- Restored User VS Code Extensions and Rich Settings: Configured the global `VSCODE_EXTENSIONS` environment variable directly in the main process entrypoint, ensuring all installed extensions load with zero latency. Restored full user settings and themes (including Elegant Red theme, symbols icon theme, and color customizations) from user configuration backups.
+- Maximum Startup Performance: Eliminated extension directory scanning bottlenecks and redundant search paths for instantaneous window and extension loading.
 
 ---
 

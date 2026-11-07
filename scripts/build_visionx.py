@@ -17,7 +17,7 @@ ICON_PATH = BUILD_DIR / "icons" / "visionx.ico"
 LOGO_SVG_PATH = BASE_DIR / "src" / "branding" / "visionx-logo.svg"
 
 print("==================================================")
-print("     VisionX IDE v1.7.3 - Built-in Agentic Chat ")
+print("     VisionX IDE v1.7.4 - Built-in Agentic Chat ")
 print("==================================================")
 
 # 1. Clean and extract
@@ -331,20 +331,53 @@ if ext_dir.exists():
         # 1. Strip Account nav button from chat header
         wv_code = re.sub(r'\{id:"account",name:"Account",tooltip:"Account",icon:\w+,navigate:\w+\},?', '', wv_code)
 
-        # 2. Strip cline and cline-pass from provider selection list (keep all real providers intact)
-        wv_code = wv_code.replace(',rgn,ogn,', ',')
+        # 2. Strip cline and cline-pass from provider selection dropdown (keep all other providers intact)
+        wv_code = wv_code.replace(
+            'w=z.useMemo(()=>{let A=u.map(B=>({value:B.id,label:B.name}));',
+            'w=z.useMemo(()=>{let A=u.filter(B=>B.id!=="cline"&&B.id!=="cline-pass"&&!B.name.includes("Cline")).map(B=>({value:B.id,label:B.name}));'
+        )
 
-        # 3. Neutralize external social links
+        # 3. Note about complex prompts
+        wv_code = wv_code.replace(
+            '" Cline uses complex prompts, so behavior can vary across models. Less capable models may not work as expected."',
+            '" VisionX uses complex prompts, so behavior can vary across models. Less capable models may not work as expected."'
+        )
+
+        # 4. Settings About page full rebranding
+        wv_code = wv_code.replace('children:["Cline v",e', 'children:["VisionX Agentic Chat v",e')
+        wv_code = wv_code.replace(
+            'An AI assistant that can use your CLI and Editor. Cline can handle complex software development tasks step-by-step with tools that let him create & edit files, explore large projects, use the browser, and execute terminal commands (after you grant permission).',
+            'An AI assistant that can use your CLI and Editor. VisionX can handle complex software development tasks step-by-step with tools that let it create & edit files, explore large projects, use the browser, and execute terminal commands (after you grant permission).'
+        )
+        wv_code = wv_code.replace('href:"https://github.com/cline/cline"', 'href:"https://github.com/NamanGaonkar/VisionX-IDE"')
+        wv_code = wv_code.replace('href:"https://github.com/cline/cline/issues"', 'href:"https://github.com/NamanGaonkar/VisionX-IDE/issues"')
+        wv_code = wv_code.replace('href:"https://docs.cline.bot/"', 'href:"https://github.com/NamanGaonkar/VisionX-IDE"')
+        wv_code = wv_code.replace('children:"https://cline.bot"', 'children:"VisionX IDE"')
+        wv_code = wv_code.replace('href:"https://cline.bot/"', 'href:"https://github.com/NamanGaonkar/VisionX-IDE"')
+        wv_code = wv_code.replace('href:"https://cline.bot/tos"', 'href:"https://github.com/NamanGaonkar/VisionX-IDE"')
+        wv_code = wv_code.replace('href:"https://cline.bot/privacy"', 'href:"https://github.com/NamanGaonkar/VisionX-IDE"')
+
+        # 5. Neutralize external social links
         wv_code = wv_code.replace('href:"https://x.com/cline"', 'style:{display:"none"}')
         wv_code = wv_code.replace('href:"https://discord.gg/cline"', 'style:{display:"none"}')
         wv_code = wv_code.replace('href:"https://www.reddit.com/r/cline/"', 'style:{display:"none"}')
         wv_code = wv_code.replace('" r/cline"', '""')
 
-        # 4. Rebrand user-facing headings
+        # 6. Rebrand user-facing headings and first-run setup prompts
         wv_code = wv_code.replace('"What can I do for you?"', '"What can VisionX do for you?"')
         wv_code = wv_code.replace('"Sign up with Cline"', '"VisionX Agentic Chat"')
         wv_code = wv_code.replace('"Welcome to Cline"', '"Welcome to VisionX Agentic Chat"')
         wv_code = wv_code.replace('"About Cline"', '"About VisionX Agentic Chat"')
+        wv_code = wv_code.replace(
+            '"Sign up for an account to get access to the latest models, billing dashboard to view usage and credits, and more upcoming features."',
+            '"Configure your API keys or local Ollama models in Settings to begin coding with VisionX Agentic Chat."'
+        )
+        wv_code = wv_code.replace(
+            '"Sign up for an account to get started for free, or use an API key that provides access to models like Claude Sonnet."',
+            '"Configure an API key or local Ollama model in Settings to begin coding with VisionX Agentic Chat."'
+        )
+        wv_code = wv_code.replace('"Get Started for Free"', '"Configure API & Models"')
+        wv_code = wv_code.replace('x.jsx(Msn,{})', 'null')
 
         wv_idx.write_text(wv_code, encoding="utf-8")
 
@@ -361,6 +394,7 @@ if ext_dir.exists():
 [data-testid="tab-account"] {
   display: none !important;
 }
+[data-value="cline"], [data-value="cline-pass"], option[value="cline"], option[value="cline-pass"],
 div:has(> [class*="ClinePass"]),
 [class*="clinepass"],
 [class*="ClinePass"] {
@@ -984,6 +1018,14 @@ main_impl = app_out / "mainImpl.js"
 if main_impl.exists():
     try:
         txt = main_impl.read_text(encoding="utf-8", errors="ignore")
+        
+        # Prepend global environment variable setup so all child processes (Extension Host, Workbench)
+        # inherit VSCODE_EXTENSIONS pointing directly to ~/.vscode/extensions for instant startup
+        init_ext_code = '(function(){try{const p=require("path"),o=require("os"),f=require("fs"),v=p.join(o.homedir(),".vscode","extensions");if(!process.env.VSCODE_EXTENSIONS&&f.existsSync(v))process.env.VSCODE_EXTENSIONS=v;}catch(e){}})();\n'
+        if "VSCODE_EXTENSIONS" not in txt[:300]:
+            txt = init_ext_code + txt
+            print("Injected process.env.VSCODE_EXTENSIONS initializer at top of mainImpl.js")
+
         txt = txt.replace("checksumFailMoreInfoUrl:\"https://go.microsoft.com/fwlink/?LinkId=828886\"", "checksumFailMoreInfoUrl:\"\"")
         txt = txt.replace("else if(n.agents)r=await this.windowsMainService.openAgentsWindow(a);", "else if(n.agents)return;")
         txt = txt.replace("if(s.agents)return r.openAgentsWindow({context:o,cli:s,initialStartup:!0});", "if(s.agents)return;")
@@ -1052,6 +1094,13 @@ if wb_js.exists():
         if old_acc in txt:
             txt = txt.replace(old_acc, new_acc)
             print("Disabled Accounts/Profile activity bar registration in workbench.desktop.main.js")
+
+        # Add VisionX Agentic Chat toggle button to CommandCenterCenter (in search bar)
+        cmd_target = 'De.appendMenuItem(F.CommandCenterCenter,{submenu:F.DebugToolBar,title:"Debug",icon:A.debug,order:1,when:D.and(Fl,CYn)}'
+        chat_cmd_menu = ');De.appendMenuItem(F.CommandCenterCenter,{command:{id:"claude-dev.SidebarProvider.focus",title:"VisionX Agentic Chat",icon:A.chatSparkle},order:101}'
+        if cmd_target in txt and chat_cmd_menu not in txt:
+            txt = txt.replace(cmd_target, cmd_target + chat_cmd_menu)
+            print("Added VisionX Agentic Chat toggle icon to CommandCenterCenter")
             
         # Filter out Accounts from titlebar action toolbar
         old_tb_acc = "T2(this.globalToolbarMenu.getActions(),n,r=>r===MDo)"
@@ -1184,8 +1233,8 @@ try:
         "--set-version-string", "LegalCopyright", "Copyright (C) 2026 VisionX Contributors",
         "--set-version-string", "InternalName", "VisionX",
         "--set-version-string", "OriginalFilename", "VisionX.exe",
-        "--set-file-version", "1.7.3.0",
-        "--set-product-version", "1.7.3.0"
+        "--set-file-version", "1.7.4.0",
+        "--set-product-version", "1.7.4.0"
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode == 0:
@@ -1196,5 +1245,5 @@ except Exception as e:
     print("Could not run rcedit:", e)
 
 print("==================================================")
-print(" VisionX IDE v1.7.3 build completed successfully! ")
+print(" VisionX IDE v1.7.4 build completed successfully! ")
 print("==================================================")

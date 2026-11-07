@@ -14,7 +14,7 @@ EXE_PATH = INSTALL_DIR / "VisionX.exe"
 BIN_PATH = INSTALL_DIR / "bin"
 
 print("==================================================")
-print("     VisionX IDE v1.7.3 - Local Windows Re-installer ")
+print("     VisionX IDE v1.7.4 - Local Windows Re-installer ")
 print("==================================================")
 
 if not DIST_DIR.exists():
@@ -139,18 +139,31 @@ for redundant in [userprofile / "VisionX" / "extensions", appdata / "VisionX" / 
             pass
 
 if vscode_user.exists():
+    best_settings = vscode_user / "settings.json"
+    bak_candidates = sorted(vscode_user.glob("settings.json.*.bak"), key=lambda f: f.stat().st_size, reverse=True)
+    if bak_candidates and (not best_settings.exists() or best_settings.stat().st_size < bak_candidates[0].stat().st_size):
+        best_settings = bak_candidates[0]
+        print(f"Restoring rich settings from backup: {best_settings.name} ({best_settings.stat().st_size} bytes)")
+        try:
+            shutil.copy2(best_settings, vscode_user / "settings.json")
+        except Exception:
+            pass
+
     for target_user in visionx_user_targets:
         target_user.mkdir(parents=True, exist_ok=True)
         for fname in ["settings.json", "keybindings.json", "mcp.json", "chatLanguageModels.json", "tasks.json"]:
-            src = vscode_user / fname
-            dest = target_user / fname
-            if src.exists():
-                shutil.copy2(src, dest)
+            if fname == "settings.json" and best_settings.exists():
+                shutil.copy2(best_settings, target_user / fname)
+            else:
+                src = vscode_user / fname
+                dest = target_user / fname
+                if src.exists():
+                    shutil.copy2(src, dest)
         snip_src = vscode_user / "snippets"
         if snip_src.exists():
             shutil.copytree(snip_src, target_user / "snippets", dirs_exist_ok=True)
     print("Migrated settings, keybindings, and snippets from VS Code to VisionX user profiles.")
 
 print("==================================================")
-print(" VisionX IDE v1.7.3 Installed Locally!            ")
+print(" VisionX IDE v1.7.4 Installed Locally!            ")
 print("==================================================")
