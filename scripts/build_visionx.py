@@ -17,7 +17,7 @@ ICON_PATH = BUILD_DIR / "icons" / "visionx.ico"
 LOGO_SVG_PATH = BASE_DIR / "src" / "branding" / "visionx-logo.svg"
 
 print("==================================================")
-print("     VisionX IDE v1.6.3 - Engine Rebuild & Polish ")
+print("     VisionX IDE v1.6.4 - Engine Rebuild & Polish ")
 print("==================================================")
 
 # 1. Clean and extract
@@ -300,118 +300,289 @@ traffic_light_css = f"""
 
 glass_css = """
 /* ======================================================== */
-/* VisionX Solid Dark Obsidian Workbench Aesthetics        */
-/* Sleek, distraction-free obsidian theme                   */
+/* VisionX Theme System: Dark Obsidian & Frosted White      */
+/* Cohesive workbench aesthetics for both light & dark      */
 /* ======================================================== */
 
-html, body, .monaco-workbench {
+/* --- DARK OBSIDIAN WORKBENCH RULES --- */
+.monaco-workbench.vs-dark,
+.monaco-workbench.hc-black {
   background-color: #07090e !important;
 }
 
-.monaco-workbench .part.titlebar {
+.monaco-workbench.vs-dark .part.titlebar,
+.monaco-workbench.hc-black .part.titlebar {
   background-color: #0c0f18 !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
   height: 38px !important;
   z-index: 100 !important;
+  color: #d8e0f0 !important;
 }
 
-.monaco-workbench .part.titlebar .menubar {
+.monaco-workbench.vs-dark .part.titlebar .menubar,
+.monaco-workbench.hc-black .part.titlebar .menubar {
   display: flex !important;
   align-items: center !important;
   gap: 2px !important;
 }
 
-.monaco-workbench .part.titlebar .menubar .menubar-menu-button {
+.monaco-workbench.vs-dark .part.titlebar .menubar .menubar-menu-button,
+.monaco-workbench.hc-black .part.titlebar .menubar .menubar-menu-button {
   border-radius: 6px !important;
   padding: 4px 8px !important;
   margin: 0 1px !important;
   transition: all 0.15s ease !important;
+  color: #ccd5e6 !important;
 }
 
-.monaco-workbench .part.titlebar .menubar .menubar-menu-button:hover,
-.monaco-workbench .part.titlebar .menubar .menubar-menu-button.open {
+.monaco-workbench.vs-dark .part.titlebar .menubar .menubar-menu-button:hover,
+.monaco-workbench.hc-black .part.titlebar .menubar .menubar-menu-button:hover,
+.monaco-workbench.vs-dark .part.titlebar .menubar .menubar-menu-button.open,
+.monaco-workbench.hc-black .part.titlebar .menubar .menubar-menu-button.open {
   background: rgba(255, 255, 255, 0.08) !important;
 }
 
-/* Rounded Symmetrical Search Command Center */
-.monaco-workbench .part.titlebar .command-center {
+.monaco-workbench.vs-dark .part.titlebar .command-center,
+.monaco-workbench.hc-black .part.titlebar .command-center {
   border-radius: 8px !important;
   background: #121624 !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #ccd5e6 !important;
   transition: all 0.2s ease !important;
 }
 
-.monaco-workbench .part.titlebar .command-center:hover {
+.monaco-workbench.vs-dark .part.titlebar .command-center:hover,
+.monaco-workbench.hc-black .part.titlebar .command-center:hover {
   border-color: #ff5500 !important;
   background: #171c2e !important;
 }
 
-/* Activity Bar */
-.monaco-workbench .part.activitybar {
+.monaco-workbench.vs-dark .part.activitybar,
+.monaco-workbench.hc-black .part.activitybar {
   background-color: #090b12 !important;
   border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
-.monaco-workbench .part.activitybar .action-item {
+.monaco-workbench.vs-dark .part.activitybar .action-item,
+.monaco-workbench.hc-black .part.activitybar .action-item {
   border-radius: 8px !important;
   margin: 4px 2px !important;
 }
 
-/* Sidebar */
-.monaco-workbench .part.sidebar {
+.monaco-workbench.vs-dark .part.sidebar,
+.monaco-workbench.hc-black .part.sidebar {
   background-color: #0a0d14 !important;
   border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
-/* Editor */
-.monaco-workbench .part.editor {
+.monaco-workbench.vs-dark .part.editor,
+.monaco-workbench.hc-black .part.editor {
   background-color: #080b11 !important;
 }
 
-.monaco-workbench .part.editor > .content .editor-group-container {
+.monaco-workbench.vs-dark .part.editor > .content .editor-group-container,
+.monaco-workbench.hc-black .part.editor > .content .editor-group-container {
   background-color: #080b11 !important;
 }
 
-.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container {
+.monaco-workbench.vs-dark .part.editor > .content .editor-group-container > .title .tabs-container,
+.monaco-workbench.hc-black .part.editor > .content .editor-group-container > .title .tabs-container {
   background-color: #0a0d14 !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
-/* Rounded Symmetrical Editor Tabs */
-.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab {
+.monaco-workbench.vs-dark .part.editor > .content .editor-group-container > .title .tabs-container > .tab,
+.monaco-workbench.hc-black .part.editor > .content .editor-group-container > .title .tabs-container > .tab {
   border-radius: 6px 6px 0 0 !important;
   margin: 2px 2px 0 2px !important;
   border-right: none !important;
   transition: all 0.15s ease !important;
   background-color: #0c0f18 !important;
+  color: #8c97b0 !important;
 }
 
-.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab.active {
+.monaco-workbench.vs-dark .part.editor > .content .editor-group-container > .title .tabs-container > .tab.active,
+.monaco-workbench.hc-black .part.editor > .content .editor-group-container > .title .tabs-container > .tab.active {
   background-color: #121624 !important;
   border-bottom: 2px solid #ff5500 !important;
+  color: #ffffff !important;
 }
 
-/* Bottom Panel */
-.monaco-workbench .part.panel {
+.monaco-workbench.vs-dark .part.panel,
+.monaco-workbench.hc-black .part.panel {
   background-color: #090b12 !important;
   border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
-/* Status Bar */
-.monaco-workbench .part.statusbar {
+.monaco-workbench.vs-dark .part.statusbar,
+.monaco-workbench.hc-black .part.statusbar {
   background-color: #07090e !important;
   border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
-/* Rounded Popups, Quick Inputs & Dialog Widgets */
-.monaco-menu .monaco-action-bar,
-.monaco-workbench .quick-input-widget,
-.monaco-workbench .editor-widget {
+.monaco-workbench.vs-dark .quick-input-widget,
+.monaco-workbench.hc-black .quick-input-widget,
+.monaco-workbench.vs-dark .editor-widget,
+.monaco-workbench.hc-black .editor-widget {
   border-radius: 10px !important;
   overflow: hidden !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5) !important;
   background-color: #0e121e !important;
+}
+
+/* --- FROSTED WHITE / LIGHT LIQUID GLASS WORKBENCH RULES --- */
+.monaco-workbench.vs,
+.monaco-workbench.hc-light {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.monaco-workbench.vs .part.titlebar,
+.monaco-workbench.hc-light .part.titlebar {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  height: 38px !important;
+  z-index: 100 !important;
+  color: #0f172a !important;
+}
+
+.monaco-workbench.vs .part.titlebar .window-title,
+.monaco-workbench.hc-light .part.titlebar .window-title {
+  color: #0f172a !important;
+}
+
+.monaco-workbench.vs .part.titlebar .menubar,
+.monaco-workbench.hc-light .part.titlebar .menubar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+}
+
+.monaco-workbench.vs .part.titlebar .menubar .menubar-menu-button,
+.monaco-workbench.hc-light .part.titlebar .menubar .menubar-menu-button {
+  border-radius: 6px !important;
+  padding: 4px 8px !important;
+  margin: 0 1px !important;
+  transition: all 0.15s ease !important;
+  color: #334155 !important;
+}
+
+.monaco-workbench.vs .part.titlebar .menubar .menubar-menu-button:hover,
+.monaco-workbench.hc-light .part.titlebar .menubar .menubar-menu-button:hover,
+.monaco-workbench.vs .part.titlebar .menubar .menubar-menu-button.open,
+.monaco-workbench.hc-light .part.titlebar .menubar .menubar-menu-button.open {
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: #0f172a !important;
+}
+
+.monaco-workbench.vs .part.titlebar .command-center,
+.monaco-workbench.hc-light .part.titlebar .command-center {
+  border-radius: 8px !important;
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+  transition: all 0.2s ease !important;
+}
+
+.monaco-workbench.vs .part.titlebar .command-center:hover,
+.monaco-workbench.hc-light .part.titlebar .command-center:hover {
+  border-color: #ff5500 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.monaco-workbench.vs .part.activitybar,
+.monaco-workbench.hc-light .part.activitybar {
+  background-color: #f8fafc !important;
+  border-right: 1px solid #e2e8f0 !important;
+}
+
+.monaco-workbench.vs .part.activitybar .action-item,
+.monaco-workbench.hc-light .part.activitybar .action-item {
+  border-radius: 8px !important;
+  margin: 4px 2px !important;
+}
+
+.monaco-workbench.vs .part.activitybar .action-item .action-label,
+.monaco-workbench.hc-light .part.activitybar .action-item .action-label {
+  color: #64748b !important;
+}
+
+.monaco-workbench.vs .part.activitybar .action-item.checked .action-label,
+.monaco-workbench.hc-light .part.activitybar .action-item.checked .action-label {
+  color: #ff5500 !important;
+}
+
+.monaco-workbench.vs .part.sidebar,
+.monaco-workbench.hc-light .part.sidebar {
+  background-color: #ffffff !important;
+  border-right: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+.monaco-workbench.vs .part.editor,
+.monaco-workbench.hc-light .part.editor {
+  background-color: #ffffff !important;
+}
+
+.monaco-workbench.vs .part.editor > .content .editor-group-container,
+.monaco-workbench.hc-light .part.editor > .content .editor-group-container {
+  background-color: #ffffff !important;
+}
+
+.monaco-workbench.vs .part.editor > .content .editor-group-container > .title .tabs-container,
+.monaco-workbench.hc-light .part.editor > .content .editor-group-container > .title .tabs-container {
+  background-color: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.monaco-workbench.vs .part.editor > .content .editor-group-container > .title .tabs-container > .tab,
+.monaco-workbench.hc-light .part.editor > .content .editor-group-container > .title .tabs-container > .tab {
+  border-radius: 6px 6px 0 0 !important;
+  margin: 2px 2px 0 2px !important;
+  border-right: none !important;
+  transition: all 0.15s ease !important;
+  background-color: #f1f5f9 !important;
+  color: #64748b !important;
+}
+
+.monaco-workbench.vs .part.editor > .content .editor-group-container > .title .tabs-container > .tab.active,
+.monaco-workbench.hc-light .part.editor > .content .editor-group-container > .title .tabs-container > .tab.active {
+  background-color: #ffffff !important;
+  border-bottom: 2px solid #ff5500 !important;
+  color: #0f172a !important;
+}
+
+.monaco-workbench.vs .part.panel,
+.monaco-workbench.hc-light .part.panel {
+  background-color: #ffffff !important;
+  border-top: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+.monaco-workbench.vs .part.statusbar,
+.monaco-workbench.hc-light .part.statusbar {
+  background-color: #f8fafc !important;
+  border-top: 1px solid #e2e8f0 !important;
+  color: #475569 !important;
+}
+
+.monaco-workbench.vs .part.statusbar .statusbar-item,
+.monaco-workbench.hc-light .part.statusbar .statusbar-item {
+  color: #475569 !important;
+}
+
+.monaco-workbench.vs .quick-input-widget,
+.monaco-workbench.hc-light .quick-input-widget,
+.monaco-workbench.vs .editor-widget,
+.monaco-workbench.hc-light .editor-widget {
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
 }
 
 /* Rounded Sleek Scrollbars */
@@ -704,8 +875,8 @@ try:
         "--set-version-string", "LegalCopyright", "Copyright (C) 2026 VisionX Contributors",
         "--set-version-string", "InternalName", "VisionX",
         "--set-version-string", "OriginalFilename", "VisionX.exe",
-        "--set-file-version", "1.6.3.0",
-        "--set-product-version", "1.6.3.0"
+        "--set-file-version", "1.6.4.0",
+        "--set-product-version", "1.6.4.0"
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode == 0:
@@ -716,5 +887,5 @@ except Exception as e:
     print("Could not run rcedit:", e)
 
 print("==================================================")
-print(" VisionX IDE v1.6.3 build completed successfully! ")
+print(" VisionX IDE v1.6.4 build completed successfully! ")
 print("==================================================")

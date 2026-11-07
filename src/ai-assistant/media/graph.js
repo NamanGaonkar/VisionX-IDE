@@ -395,19 +395,229 @@ function animate() {
 }
 requestAnimationFrame(animate);
 
+function isLightTheme() {
+  return document.body.classList.contains('vscode-light');
+}
+
+function hexToRgb(hex) {
+  let c = (hex || '#94a3b8').replace('#', '');
+  if (c.length === 3) c = c.split('').map(x => x + x).join('');
+  const num = parseInt(c, 16) || 0;
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255
+  };
+}
+
+function adjustColor(hex, factor) {
+  const { r, g, b } = hexToRgb(hex);
+  const clamp = v => Math.max(0, Math.min(255, Math.round(v)));
+  return `rgb(${clamp(r * factor)}, ${clamp(g * factor)}, ${clamp(b * factor)})`;
+}
+
+function rgbaColor(hex, alpha) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+const themeObserver = new MutationObserver(() => {
+  requestAnimationFrame(render3D);
+});
+themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+function drawGlassBadge(ctx, text, x, y, isSelected, isHovered, isLight) {
+  ctx.save();
+  const fontSize = isSelected ? 11 : 10;
+  ctx.font = `${isSelected ? '600' : '500'} ${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+  const metrics = ctx.measureText(text);
+  const padX = 7;
+  const padY = 3;
+  const bw = metrics.width + padX * 2;
+  const bh = fontSize + padY * 2;
+  const bx = x - bw / 2;
+  const by = y;
+
+  ctx.beginPath();
+  const radius = 5;
+  ctx.moveTo(bx + radius, by);
+  ctx.arcTo(bx + bw, by, bx + bw, by + bh, radius);
+  ctx.arcTo(bx + bw, by + bh, bx, by + bh, radius);
+  ctx.arcTo(bx, by + bh, bx, by, radius);
+  ctx.arcTo(bx, by, bx + bw, by, radius);
+  ctx.closePath();
+
+  if (isLight) {
+    ctx.fillStyle = isSelected ? 'rgba(255, 247, 237, 0.96)' : 'rgba(255, 255, 255, 0.92)';
+    ctx.strokeStyle = isSelected ? '#ff5500' : (isHovered ? '#ffaa00' : 'rgba(0, 0, 0, 0.12)');
+  } else {
+    ctx.fillStyle = isSelected ? 'rgba(30, 20, 10, 0.92)' : 'rgba(12, 16, 26, 0.88)';
+    ctx.strokeStyle = isSelected ? '#ff5500' : (isHovered ? '#ffaa00' : 'rgba(255, 255, 255, 0.14)');
+  }
+  ctx.lineWidth = 1;
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  if (isLight) {
+    ctx.fillStyle = isSelected ? '#c2410c' : (isHovered ? '#d97706' : '#0f172a');
+  } else {
+    ctx.fillStyle = isSelected ? '#ffaa00' : (isHovered ? '#ffffff' : '#cbd5e1');
+  }
+  ctx.fillText(text, x, by + bh / 2);
+  ctx.restore();
+}
+
+function drawModernSphere(ctx, n, isSelected, isHovered, isLight) {
+  const r = n.screenRadius;
+  const x = n.screenX;
+  const y = n.screenY;
+
+  // 1. Contact shadow (grounding the 3D sphere)
+  ctx.save();
+  ctx.beginPath();
+  const shadowY = y + r * 0.92;
+  const shadowRx = r * 0.82;
+  const shadowRy = r * 0.26;
+  const shadowGrad = ctx.createRadialGradient(x, shadowY, 0, x, shadowY, shadowRx);
+  shadowGrad.addColorStop(0, isLight ? 'rgba(0, 0, 0, 0.24)' : 'rgba(0, 0, 0, 0.65)');
+  shadowGrad.addColorStop(0.65, isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(0, 0, 0, 0.22)');
+  shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = shadowGrad;
+  ctx.ellipse(x, shadowY, shadowRx, shadowRy, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // 2. Holographic 3D Orbit Ring on Hover or Select
+  if (isSelected || isHovered) {
+    ctx.save();
+    ctx.beginPath();
+    const orbitTilt = 0.35;
+    ctx.ellipse(x, y, r * 1.85, r * 0.65, orbitTilt, 0, Math.PI * 2);
+    ctx.strokeStyle = isSelected ? '#ff5500' : '#ffaa00';
+    ctx.lineWidth = 1.3;
+    ctx.setLineDash([4, 4]);
+    ctx.shadowColor = isSelected ? '#ff5500' : '#ffaa00';
+    ctx.shadowBlur = 8;
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Orbiting particle
+    const orbAngle = pulseOffset * Math.PI * 2;
+    const orbX = x + Math.cos(orbAngle) * r * 1.85 * Math.cos(orbitTilt) - Math.sin(orbAngle) * r * 0.65 * Math.sin(orbitTilt);
+    const orbY = y + Math.cos(orbAngle) * r * 1.85 * Math.sin(orbitTilt) + Math.sin(orbAngle) * r * 0.65 * Math.cos(orbitTilt);
+    ctx.beginPath();
+    ctx.arc(orbX, orbY, 2.6, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = '#ff8800';
+    ctx.shadowBlur = 10;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 3. Volumetric PBR Multi-Stop Spherical Shading
+  const lx = x - r * 0.32;
+  const ly = y - r * 0.35;
+  const sphereGrad = ctx.createRadialGradient(
+    lx,
+    ly,
+    r * 0.05,
+    x,
+    y,
+    r
+  );
+
+  const col = n.color;
+  sphereGrad.addColorStop(0, '#ffffff');
+  sphereGrad.addColorStop(0.18, adjustColor(col, 1.35));
+  sphereGrad.addColorStop(0.55, col);
+  sphereGrad.addColorStop(0.85, adjustColor(col, 0.42));
+  sphereGrad.addColorStop(1, adjustColor(col, 0.22));
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = sphereGrad;
+  if (isSelected || isHovered) {
+    ctx.shadowColor = isSelected ? '#ff5500' : col;
+    ctx.shadowBlur = isSelected ? 16 : 10;
+  }
+  ctx.fill();
+  ctx.restore();
+
+  // 4. Ambient Bounce Fill (soft upward reflection)
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  const bounceGrad = ctx.createRadialGradient(
+    x + r * 0.45,
+    y + r * 0.45,
+    r * 0.1,
+    x + r * 0.3,
+    y + r * 0.3,
+    r * 0.95
+  );
+  bounceGrad.addColorStop(0, rgbaColor(col, 0.35));
+  bounceGrad.addColorStop(0.6, 'rgba(0, 0, 0, 0)');
+  bounceGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = bounceGrad;
+  ctx.fill();
+  ctx.restore();
+
+  // 5. Fresnel Edge Rim Highlight
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, r - 0.5, 0, Math.PI * 2);
+  ctx.strokeStyle = isLight ? 'rgba(255, 255, 255, 0.65)' : rgbaColor(col, 0.65);
+  ctx.lineWidth = 1.0;
+  ctx.stroke();
+  ctx.restore();
+
+  // 6. Micro-Specular Crisp Glint
+  if (r > 4) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(
+      lx + r * 0.04,
+      ly + r * 0.04,
+      r * 0.22,
+      r * 0.11,
+      -Math.PI / 4,
+      0,
+      Math.PI * 2
+    );
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 7. Glass Pill Badge for File Labels
+  if (isSelected || isHovered || r > 8) {
+    drawGlassBadge(ctx, n.name, x, y + r + 10, isSelected, isHovered, isLight);
+  }
+}
+
 function render3D() {
   const w = container.clientWidth;
   const h = container.clientHeight;
   const cx = w / 2;
   const cy = h / 2;
   const distance = BASE_DISTANCE / zoom;
+  const isLight = isLightTheme();
 
   ctx.clearRect(0, 0, w, h);
 
-  // Background subtle dark radial ambience
-  const bgGrad = ctx.createRadialGradient(cx, cy, 40, cx, cy, Math.max(w, h) * 0.7);
-  bgGrad.addColorStop(0, 'rgba(255, 85, 0, 0.04)');
-  bgGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  // Background subtle radial ambience
+  const bgGrad = ctx.createRadialGradient(cx, cy, 30, cx, cy, Math.max(w, h) * 0.7);
+  if (isLight) {
+    bgGrad.addColorStop(0, 'rgba(255, 85, 0, 0.05)');
+    bgGrad.addColorStop(0.5, 'rgba(235, 242, 250, 0.4)');
+    bgGrad.addColorStop(1, 'rgba(230, 238, 248, 0)');
+  } else {
+    bgGrad.addColorStop(0, 'rgba(255, 85, 0, 0.04)');
+    bgGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  }
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, w, h);
 
@@ -445,16 +655,16 @@ function render3D() {
 
     if (isConnectedToSelected) {
       ctx.strokeStyle = '#ff5500';
-      ctx.lineWidth = 2.2;
+      ctx.lineWidth = 2.4;
       ctx.shadowColor = '#ff5500';
       ctx.shadowBlur = 8;
     } else if (isConnectedToHovered) {
       ctx.strokeStyle = '#ffaa00';
-      ctx.lineWidth = 1.6;
+      ctx.lineWidth = 1.8;
       ctx.shadowBlur = 0;
     } else {
-      ctx.strokeStyle = 'rgba(255, 120, 50, 0.16)';
-      ctx.lineWidth = 0.9;
+      ctx.strokeStyle = isLight ? 'rgba(100, 116, 139, 0.32)' : 'rgba(255, 120, 50, 0.18)';
+      ctx.lineWidth = isLight ? 1.1 : 0.9;
       ctx.shadowBlur = 0;
     }
     ctx.stroke();
@@ -465,56 +675,19 @@ function render3D() {
       const pulseX = p1.px + (p2.px - p1.px) * pulseOffset;
       const pulseY = p1.py + (p2.py - p1.py) * pulseOffset;
       ctx.beginPath();
-      ctx.arc(pulseX, pulseY, 2.8, 0, Math.PI * 2);
+      ctx.arc(pulseX, pulseY, 3, 0, Math.PI * 2);
       ctx.fillStyle = '#ffffff';
       ctx.shadowColor = '#ff8800';
-      ctx.shadowBlur = 6;
+      ctx.shadowBlur = 8;
       ctx.fill();
       ctx.shadowBlur = 0;
     }
   });
 
-  // Draw 3D Nodes
+  // Draw Modern 3D Spheres
   projectedNodes.forEach(n => {
     const isSelected = (n === selectedNode);
     const isHovered = (n === hoveredNode);
-
-    // Glowing halo on select/hover
-    if (isSelected || isHovered) {
-      ctx.beginPath();
-      ctx.arc(n.screenX, n.screenY, n.screenRadius + (isSelected ? 6 : 3.5), 0, Math.PI * 2);
-      ctx.strokeStyle = isSelected ? '#ff5500' : '#ffaa00';
-      ctx.lineWidth = 1.8;
-      ctx.shadowColor = isSelected ? '#ff5500' : '#ffaa00';
-      ctx.shadowBlur = 12;
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-    }
-
-    // 3D Sphere Shading
-    const grad = ctx.createRadialGradient(
-      n.screenX - n.screenRadius * 0.35,
-      n.screenY - n.screenRadius * 0.35,
-      n.screenRadius * 0.08,
-      n.screenX,
-      n.screenY,
-      n.screenRadius
-    );
-    grad.addColorStop(0, '#ffffff');
-    grad.addColorStop(0.35, n.color);
-    grad.addColorStop(1, '#060810');
-
-    ctx.beginPath();
-    ctx.arc(n.screenX, n.screenY, n.screenRadius, 0, Math.PI * 2);
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    // Node Name Tag
-    if (isSelected || isHovered || n.screenRadius > 8) {
-      ctx.font = (isSelected ? '600 11px' : '10px') + ' -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = isSelected ? '#ffaa00' : (isHovered ? '#ffffff' : '#94a3b8');
-      ctx.fillText(n.name, n.screenX, n.screenY + n.screenRadius + 11);
-    }
+    drawModernSphere(ctx, n, isSelected, isHovered, isLight);
   });
 }

@@ -6,7 +6,7 @@
 ### Autonomous AI and Spatial Developer Workspace
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://opensource.org/licenses/MIT)
-[![Release: v1.6.3](https://img.shields.io/badge/Release-v1.6.3-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.6.3)
+[![Release: v1.6.4](https://img.shields.io/badge/Release-v1.6.4-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.6.4)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-red.svg)]()
 [![Aesthetics](https://img.shields.io/badge/Aesthetics-Liquid%20Glass-ff5500.svg)]()
 [![AI Engine](https://img.shields.io/badge/AI%20Core-BYOK%20Dynamic%20Discovery-ffd700.svg)]()
@@ -15,6 +15,15 @@
 VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a sleek liquid glass dark obsidian aesthetic, native Bring-Your-Own-Key (BYOK) dynamic AI model discovery, an interactive 360-degree orbital 3D project architecture graph in the bottom panel, macOS-style traffic light window controls, and seamless automatic migration of all VS Code extensions and settings.
 
 </div>
+
+---
+
+## What is New in v1.6.4
+
+- Comprehensive White and Light Theme Coverage: Fully resolved workbench theme scoping so that light themes (including the newly added VisionX Light Liquid Glass theme) dynamically transform all surfaces: title bar, Command Center, menubar, activity bar, editor tabs, bottom panel, status bar, and dialog popups become pure frosted white and light slate with warm accent highlights.
+- Modern 3D Volumetric Spheres: Upgraded the 3D architecture graph from legacy flat gradient blobs to modern PBR volumetric spheres. Features multi-stop lighting, dynamic contact shadows grounding each node, Fresnel edge rim sheen, micro-specular glints, ambient bounce fill, and 3D holographic orbit rings with orbiting photon particles on hover and selection.
+- Frosted Glass Pill Badges: File labels in the 3D graph are now rendered on sleek, rounded frosted glass pill badges with dynamic theme contrast, eliminating unreadable floating text.
+- VisionX Light Liquid Glass Theme: Built-in signature frosted white light theme with calibrated syntax tokens and subtle liquid borders.
 
 ---
 
@@ -96,7 +105,7 @@ VisionX is a high-velocity code editor and developer workspace built on an open-
 ## Installation and Quick Start
 
 ### Standalone Release (Windows x64)
-1. Download the latest release archive (`VisionX-Windows-x64-v1.6.2.zip`) from the Releases section.
+1. Download the latest release archive (`VisionX-Windows-x64-v1.6.4.zip`) from the Releases section.
 2. Extract the archive to any desired directory (e.g., `C:\VisionX` or `%LOCALAPPDATA%\Programs\VisionX`).
 3. Run `VisionX.exe`.
 

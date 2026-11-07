@@ -16,6 +16,11 @@
         "label": "VisionX Liquid Glass",
         "uiTheme": "vs-dark",
         "path": "./themes/VisionX-Liquid-Glass.json"
+      },
+      {
+        "label": "VisionX Light Liquid Glass",
+        "uiTheme": "vs",
+        "path": "./themes/VisionX-Light-Liquid-Glass.json"
       }
     ]
   }
