@@ -17,7 +17,7 @@ ICON_PATH = BUILD_DIR / "icons" / "visionx.ico"
 LOGO_SVG_PATH = BASE_DIR / "src" / "branding" / "visionx-logo.svg"
 
 print("==================================================")
-print("     VisionX IDE v1.6.5 - Engine Rebuild & Polish ")
+print("     VisionX IDE v1.7.4 - Built-in Agentic Chat ")
 print("==================================================")
 
 # 1. Clean and extract
@@ -85,18 +85,42 @@ if product_json_path.exists():
         product["configurationDefaults"] = {}
     product["configurationDefaults"]["workbench.colorTheme"] = "VisionX Liquid Glass"
     product["configurationDefaults"]["telemetry.telemetryLevel"] = "off"
+    product["configurationDefaults"]["telemetry.enableCrashReporter"] = False
+    product["configurationDefaults"]["telemetry.enableTelemetry"] = False
+    product["configurationDefaults"]["claude-dev.telemetry"] = False
     product["configurationDefaults"]["workbench.startupEditor"] = "welcomePage"
     product["configurationDefaults"]["window.titleBarStyle"] = "custom"
     product["configurationDefaults"]["window.menuBarVisibility"] = "classic"
     product["configurationDefaults"]["window.commandCenter"] = True
     product["configurationDefaults"]["workbench.layoutControl.enabled"] = True
+    product["configurationDefaults"]["workbench.layoutControl.type"] = "both"
+    product["configurationDefaults"]["workbench.secondarySideBar.defaultVisibility"] = "visible"
     product["configurationDefaults"]["chat.agent.enabled"] = False
     product["configurationDefaults"]["chat.tips.enabled"] = False
     product["configurationDefaults"]["chat.agent.tips.enabled"] = False
 
+    if "builtInExtensions" not in product or not isinstance(product["builtInExtensions"], list):
+        product["builtInExtensions"] = []
+    
+    # Register Cline and VisionX Project Graph as built-in extensions
+    product["builtInExtensions"].append({
+        "name": "saoudrizwan.claude-dev",
+        "version": "4.1.26",
+        "repo": "https://github.com/cline/cline"
+    })
+    product["builtInExtensions"].append({
+        "name": "visionx.visionx-project-graph",
+        "version": "1.7.3",
+        "repo": "https://github.com/NamanGaonkar/VisionX-IDE"
+    })
+
+    if "credits" not in product:
+        product["credits"] = {}
+    product["credits"]["cline"] = "VisionX incorporates Cline (Apache-2.0, Copyright (c) 2024 Saoud Rizwan and contributors) as the built-in default agentic chat."
+
     with open(product_json_path, "w", encoding="utf-8") as f:
         json.dump(product, f, indent=2)
-    print("product.json updated successfully.")
+    print("product.json updated successfully with Cline defaults and builtInExtensions.")
 
 # 4. Patch resources/app/package.json
 pkg_json_path = VISIONX_DIST / "resources" / "app" / "package.json"
@@ -145,7 +169,7 @@ if LOGO_SVG_PATH.exists():
                     pass
     print(f"Replaced {replaced_count} legacy SVGs with VisionX glowing SVG logo.")
 
-# 7. Inject custom extensions (Theme & AI Assistant)
+# 7. Inject custom extensions (Theme, Project Graph, & Cline Default Agentic Chat)
 ext_dir = VISIONX_DIST / "resources" / "app" / "extensions"
 if ext_dir.exists():
     print("Installing built-in VisionX Liquid Glass Theme...")
@@ -154,11 +178,250 @@ if ext_dir.exists():
         shutil.rmtree(target_theme)
     shutil.copytree(BASE_DIR / "src" / "theme", target_theme)
 
-    print("Installing built-in VisionX AI Core Extension...")
-    target_ai = ext_dir / "visionx-ai-core"
-    if target_ai.exists():
-        shutil.rmtree(target_ai)
-    shutil.copytree(BASE_DIR / "src" / "ai-assistant", target_ai)
+    print("Installing built-in VisionX 3D Project Architecture Graph...")
+    target_graph = ext_dir / "visionx-project-graph"
+    if target_graph.exists():
+        shutil.rmtree(target_graph)
+    shutil.copytree(BASE_DIR / "src" / "project-graph", target_graph)
+
+    print("Bundling Cline (Apache 2.0) as default built-in agentic chat...")
+    target_cline = ext_dir / "claude-dev"
+    if target_cline.exists():
+        shutil.rmtree(target_cline)
+    target_cline.mkdir(parents=True, exist_ok=True)
+
+    cline_vsix = BUILD_DIR / "extensions" / "saoudrizwan.claude-dev-4.1.26.vsix"
+    if cline_vsix.exists():
+        with zipfile.ZipFile(cline_vsix, "r") as z:
+            for member in z.infolist():
+                if member.filename.startswith("extension/"):
+                    rel_path = member.filename[len("extension/"):]
+                    if not rel_path:
+                        continue
+                    out_path = target_cline / rel_path
+                    if member.is_dir():
+                        out_path.mkdir(parents=True, exist_ok=True)
+                    else:
+                        out_path.parent.mkdir(parents=True, exist_ok=True)
+                        out_path.write_bytes(z.read(member.filename))
+        print("Extracted Cline extension files.")
+
+    # Keep Apache license and NOTICE in packaged build
+    cline_license = target_cline / "LICENSE.txt"
+    if cline_license.exists():
+        shutil.copy(cline_license, VISIONX_DIST / "CLINE_LICENSE.txt")
+        shutil.copy(cline_license, VISIONX_DIST / "resources" / "app" / "CLINE_LICENSE.txt")
+
+    # Create glowing VisionX chat icon for Command Center button
+    icons_dir = target_cline / "assets" / "icons"
+    icons_dir.mkdir(parents=True, exist_ok=True)
+    chat_v_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16">
+  <defs>
+    <filter id="chat-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <linearGradient id="v-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff1a1a" />
+      <stop offset="50%" stop-color="#ff4400" />
+      <stop offset="100%" stop-color="#ffaa00" />
+    </linearGradient>
+    <linearGradient id="v-border" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff3300" />
+      <stop offset="100%" stop-color="#ff9900" />
+    </linearGradient>
+  </defs>
+  <rect x="28" y="28" width="456" height="456" rx="96" fill="#0c0e16" stroke="url(#v-border)" stroke-width="18" filter="url(#chat-glow)" />
+  <path d="M100 130 L160 130 L256 320 L352 130 L412 130 L286 370 L256 420 L226 370 Z" fill="#cc0000" opacity="0.85" />
+  <path d="M128 144 L196 144 L256 270 L316 144 L384 144 L276 360 L256 400 L236 360 Z" fill="url(#v-grad)" filter="url(#chat-glow)" />
+  <path d="M208 240 L256 340 L304 240 L276 240 L256 280 L236 240 Z" fill="#fff3a8" opacity="0.9" />
+</svg>"""
+    (icons_dir / "chat-v-icon.svg").write_text(chat_v_svg, encoding="utf-8")
+
+    # Configure Cline package.json for secondary sidebar, command center chat button, and Ctrl+Alt+I shortcut
+    cline_pkg_path = target_cline / "package.json"
+    if cline_pkg_path.exists():
+        with open(cline_pkg_path, "r", encoding="utf-8") as f:
+            cline_pkg = json.load(f)
+
+        cline_pkg["displayName"] = "VisionX Agentic Chat"
+        cline_pkg["description"] = "Autonomous AI coding agent built into VisionX IDE"
+
+        # 1. Place chat container in activitybar
+        cline_pkg["contributes"]["viewsContainers"] = {
+            "activitybar": [
+                {
+                    "id": "claude-dev-ActivityBar",
+                    "title": "VisionX Agentic Chat",
+                    "icon": "assets/icons/chat-v-icon.svg"
+                }
+            ]
+        }
+
+        # 2. Add Chat command and button to commandCenter (in titlebar next to search)
+        commands = cline_pkg.get("contributes", {}).get("commands", [])
+        has_focus_cmd = any(c.get("command") == "claude-dev.SidebarProvider.focus" for c in commands)
+        if not has_focus_cmd:
+            commands.insert(0, {
+                "command": "claude-dev.SidebarProvider.focus",
+                "title": "VisionX Agentic Chat",
+                "icon": "$(comment-discussion)"
+            })
+        else:
+            for c in commands:
+                if c.get("command") == "claude-dev.SidebarProvider.focus":
+                    c["icon"] = "$(comment-discussion)"
+                    c["title"] = "VisionX Agentic Chat"
+        cline_pkg["contributes"]["commands"] = commands
+
+        menus = cline_pkg.get("contributes", {}).get("menus", {})
+        menus["commandCenter"] = [{
+            "command": "claude-dev.SidebarProvider.focus",
+            "group": "navigation",
+            "order": 1
+        }]
+        cline_pkg["contributes"]["menus"] = menus
+
+        # 3. Add keyboard shortcut Ctrl+Alt+I (mac: cmd+alt+i) to focus chat
+        keybindings = cline_pkg.get("contributes", {}).get("keybindings", [])
+        has_kb = any(k.get("command") == "claude-dev.SidebarProvider.focus" for k in keybindings)
+        if not has_kb:
+            keybindings.insert(0, {
+                "command": "claude-dev.SidebarProvider.focus",
+                "key": "ctrl+alt+i",
+                "mac": "cmd+alt+i",
+                "win": "ctrl+alt+i",
+                "linux": "ctrl+alt+i"
+            })
+        cline_pkg["contributes"]["keybindings"] = keybindings
+
+        # 4. Ensure activationEvents include view and focus command
+        act_events = cline_pkg.get("activationEvents", [])
+        for ev in ["onView:claude-dev.SidebarProvider", "onCommand:claude-dev.SidebarProvider.focus", "onCommand:workbench.view.extension.claude-dev-ActivityBar"]:
+            if ev not in act_events:
+                act_events.append(ev)
+        cline_pkg["activationEvents"] = act_events
+
+        with open(cline_pkg_path, "w", encoding="utf-8") as f:
+            json.dump(cline_pkg, f, indent=2)
+        print("Configured Cline package.json for activitybar, commandCenter button, and Ctrl+Alt+I.")
+
+    # Neutralize telemetry in Cline
+    cline_ext_js = target_cline / "dist" / "extension.js"
+    if cline_ext_js.exists():
+        code = cline_ext_js.read_text(encoding="utf-8", errors="ignore")
+        old_is_enabled = 'isEnabled(){let e=no.get().getGlobalSettingsKey("telemetrySetting")!=="disabled"'
+        new_is_enabled = 'isEnabled(){return false;let e="disabled"'
+        if old_is_enabled in code:
+            code = code.replace(old_is_enabled, new_is_enabled)
+            print("Neutralized PostHog telemetry in Cline extension.js")
+        code = code.replace('telemetrySetting:void 0', 'telemetrySetting:"disabled"')
+        cline_ext_js.write_text(code, encoding="utf-8")
+
+    # Patch Chat Webview UI: strip Account, remove Cline provider, replace robot logo with VisionX logo, remove socials, rebrand
+    wv_idx = target_cline / "webview-ui" / "build" / "assets" / "index.js"
+    wv_css = target_cline / "webview-ui" / "build" / "assets" / "index.css"
+    if wv_idx.exists():
+        import re
+        wv_code = wv_idx.read_text(encoding="utf-8", errors="ignore")
+
+        # 1. Strip Account nav button from chat header
+        wv_code = re.sub(r'\{id:"account",name:"Account",tooltip:"Account",icon:\w+,navigate:\w+\},?', '', wv_code)
+
+        # 2. Strip cline and cline-pass from provider selection dropdown (keep all other providers intact)
+        wv_code = wv_code.replace(
+            'w=z.useMemo(()=>{let A=u.map(B=>({value:B.id,label:B.name}));',
+            'w=z.useMemo(()=>{let A=u.filter(B=>B.id!=="cline"&&B.id!=="cline-pass"&&!B.name.includes("Cline")).map(B=>({value:B.id,label:B.name}));'
+        )
+
+        # 3. Note about complex prompts
+        wv_code = wv_code.replace(
+            '" Cline uses complex prompts, so behavior can vary across models. Less capable models may not work as expected."',
+            '" VisionX uses complex prompts, so behavior can vary across models. Less capable models may not work as expected."'
+        )
+
+        # 4. Settings About page full rebranding
+        wv_code = wv_code.replace('children:["Cline v",e', 'children:["VisionX Agentic Chat v",e')
+        wv_code = wv_code.replace(
+            'An AI assistant that can use your CLI and Editor. Cline can handle complex software development tasks step-by-step with tools that let him create & edit files, explore large projects, use the browser, and execute terminal commands (after you grant permission).',
+            'An AI assistant that can use your CLI and Editor. VisionX can handle complex software development tasks step-by-step with tools that let it create & edit files, explore large projects, use the browser, and execute terminal commands (after you grant permission).'
+        )
+        wv_code = wv_code.replace('href:"https://github.com/cline/cline"', 'href:"https://github.com/NamanGaonkar/VisionX-IDE"')
+        wv_code = wv_code.replace('href:"https://github.com/cline/cline/issues"', 'href:"https://github.com/NamanGaonkar/VisionX-IDE/issues"')
+        wv_code = wv_code.replace('href:"https://docs.cline.bot/"', 'href:"https://github.com/NamanGaonkar/VisionX-IDE"')
+        wv_code = wv_code.replace('children:"https://cline.bot"', 'children:"VisionX IDE"')
+        wv_code = wv_code.replace('href:"https://cline.bot/"', 'href:"https://github.com/NamanGaonkar/VisionX-IDE"')
+        wv_code = wv_code.replace('href:"https://cline.bot/tos"', 'href:"https://github.com/NamanGaonkar/VisionX-IDE"')
+        wv_code = wv_code.replace('href:"https://cline.bot/privacy"', 'href:"https://github.com/NamanGaonkar/VisionX-IDE"')
+
+        # 5. Neutralize external social links
+        wv_code = wv_code.replace('href:"https://x.com/cline"', 'style:{display:"none"}')
+        wv_code = wv_code.replace('href:"https://discord.gg/cline"', 'style:{display:"none"}')
+        wv_code = wv_code.replace('href:"https://www.reddit.com/r/cline/"', 'style:{display:"none"}')
+        wv_code = wv_code.replace('" r/cline"', '""')
+
+        # 6. Rebrand user-facing headings and first-run setup prompts
+        wv_code = wv_code.replace('"What can I do for you?"', '"What can VisionX do for you?"')
+        wv_code = wv_code.replace('"Sign up with Cline"', '"VisionX Agentic Chat"')
+        wv_code = wv_code.replace('"Welcome to Cline"', '"Welcome to VisionX Agentic Chat"')
+        wv_code = wv_code.replace('"About Cline"', '"About VisionX Agentic Chat"')
+        wv_code = wv_code.replace(
+            '"Sign up for an account to get access to the latest models, billing dashboard to view usage and credits, and more upcoming features."',
+            '"Configure your API keys or local Ollama models in Settings to begin coding with VisionX Agentic Chat."'
+        )
+        wv_code = wv_code.replace(
+            '"Sign up for an account to get started for free, or use an API key that provides access to models like Claude Sonnet."',
+            '"Configure an API key or local Ollama model in Settings to begin coding with VisionX Agentic Chat."'
+        )
+        wv_code = wv_code.replace('"Get Started for Free"', '"Configure API & Models"')
+        wv_code = wv_code.replace('x.jsx(Msn,{})', 'null')
+
+        wv_idx.write_text(wv_code, encoding="utf-8")
+
+        # Verify syntax with node --check to guarantee zero AST/syntax regressions
+        res = subprocess.run(["node", "--check", str(wv_idx)], capture_output=True, text=True)
+        if res.returncode != 0:
+            raise RuntimeError(f"Syntax validation failed on webview index.js: {res.stderr}")
+        print("Patched Chat Webview UI: stripped Account, removed Cline provider, removed socials, rebranded.")
+        print("Verified webview index.js syntax with node --check: 100% valid.")
+
+    if wv_css.exists():
+        chat_custom_css = """
+/* VisionX Theme & Brand Customizations for Agentic Chat */
+[data-testid="tab-account"] {
+  display: none !important;
+}
+[data-value="cline"], [data-value="cline-pass"], option[value="cline"], option[value="cline-pass"],
+div:has(> [class*="ClinePass"]),
+[class*="clinepass"],
+[class*="ClinePass"] {
+  display: none !important;
+}
+/* Replace robot head logo with glowing VisionX logo */
+svg[viewBox="0 0 113 113"],
+svg[viewBox="0 0 66.62 63.92"] {
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect x='24' y='24' width='464' height='464' rx='100' fill='%23080a10' stroke='%23ff4400' stroke-width='12'/><path d='M100 130 L160 130 L256 320 L352 130 L412 130 L286 370 L256 420 L226 370 Z' fill='%23cc0000' opacity='0.85'/><path d='M128 144 L196 144 L256 270 L316 144 L384 144 L276 360 L256 400 L236 360 Z' fill='%23ff6600'/><path d='M208 240 L256 340 L304 240 L276 240 L256 280 L236 240 Z' fill='%23fff3a8' opacity='0.9'/></svg>") no-repeat center !important;
+  background-size: contain !important;
+  border-radius: 12px !important;
+  width: 54px !important;
+  height: 54px !important;
+  display: inline-block !important;
+}
+svg[viewBox="0 0 113 113"] > *,
+svg[viewBox="0 0 66.62 63.92"] > * {
+  display: none !important;
+  opacity: 0 !important;
+}
+textarea, input, select, button {
+  border-radius: 8px !important;
+}
+"""
+        with open(wv_css, "a", encoding="utf-8") as f:
+            f.write("\n" + chat_custom_css)
+        print("Injected VisionX logo and styling into webview index.css.")
 
 # 8. macOS-Style Traffic Light Window Controls CSS matching uploaded image
 traffic_light_css = f"""
@@ -637,7 +900,6 @@ glass_css = """
 /* Completely eliminate corruption / tamper notification toasts */
 .monaco-workbench .notifications-toasts .notification-toast:has([aria-label*="corrupt"]),
 .monaco-workbench .notifications-toasts .notification-toast:has([aria-label*="corrupted"]),
-.monaco-workbench .notification-toast:has(.notification-message:has-text("corrupt")),
 [aria-label*="installation appears to be corrupt"] {
   display: none !important;
   visibility: hidden !important;
@@ -651,6 +913,67 @@ glass_css = """
   margin: 0 !important;
   border: none !important;
   pointer-events: none !important;
+}
+
+/* ======================================================== */
+/* Modern Rounded Island Layout for Editor Groups & Panels  */
+/* ======================================================== */
+.monaco-workbench.vs-dark .part.editor .editor-group-container,
+.monaco-workbench.hc-black .part.editor .editor-group-container {
+  border-radius: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.monaco-workbench.vs .part.editor .editor-group-container,
+.monaco-workbench.hc-light .part.editor .editor-group-container {
+  border-radius: 10px !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.monaco-workbench .part.panel {
+  border-radius: 10px 10px 0 0 !important;
+}
+
+.monaco-workbench .part.sidebar {
+  border-radius: 0 10px 10px 0 !important;
+}
+
+.monaco-workbench .part.auxiliarybar {
+  border-radius: 10px 0 0 10px !important;
+}
+
+.monaco-workbench .terminal-tab {
+  border-radius: 6px !important;
+}
+
+/* Glowing VisionX Chat Toggle Button in Title Bar Command Center */
+.monaco-workbench .part.titlebar .codicon-comment-discussion,
+.monaco-workbench .part.titlebar .command-center .action-item [class*="codicon-comment-discussion"],
+.monaco-workbench .part.titlebar .command-center .action-item:has([class*="chat-v-icon"]),
+.monaco-workbench .part.titlebar .command-center .action-item [class*="chat-v-icon"],
+.monaco-workbench .part.titlebar [id*="claude-dev.SidebarProvider.focus"],
+.monaco-workbench .part.titlebar .action-item a[aria-label*="VisionX Agentic Chat"],
+.monaco-workbench .part.titlebar .action-item a[aria-label*="VisionX Chat"] {
+  background-image: url("{logo_b64_url}") !important;
+  background-size: 16px !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+}
+.monaco-workbench .part.titlebar .codicon-comment-discussion::before,
+.monaco-workbench .part.titlebar .command-center .action-item [class*="codicon-comment-discussion"]::before {
+  content: "" !important;
+  display: none !important;
+}
+.monaco-workbench.vs-dark .part.titlebar .command-center .action-item:has([class*="chat-v-icon"]):hover,
+.monaco-workbench.hc-black .part.titlebar .command-center .action-item:has([class*="chat-v-icon"]):hover,
+.monaco-workbench.vs-dark .part.titlebar .action-item:has(.codicon-comment-discussion):hover,
+.monaco-workbench.vs-dark .part.titlebar [id*="claude-dev.SidebarProvider.focus"]:hover {
+  background: rgba(255, 85, 0, 0.22) !important;
+  box-shadow: 0 0 12px rgba(255, 85, 0, 0.45) !important;
 }
 """
 
@@ -695,6 +1018,14 @@ main_impl = app_out / "mainImpl.js"
 if main_impl.exists():
     try:
         txt = main_impl.read_text(encoding="utf-8", errors="ignore")
+        
+        # Prepend global environment variable setup so all child processes (Extension Host, Workbench)
+        # inherit VSCODE_EXTENSIONS pointing directly to ~/.vscode/extensions for instant startup
+        init_ext_code = '(function(){try{const p=require("path"),o=require("os"),f=require("fs"),v=p.join(o.homedir(),".vscode","extensions");if(!process.env.VSCODE_EXTENSIONS&&f.existsSync(v))process.env.VSCODE_EXTENSIONS=v;}catch(e){}})();\n'
+        if "VSCODE_EXTENSIONS" not in txt[:300]:
+            txt = init_ext_code + txt
+            print("Injected process.env.VSCODE_EXTENSIONS initializer at top of mainImpl.js")
+
         txt = txt.replace("checksumFailMoreInfoUrl:\"https://go.microsoft.com/fwlink/?LinkId=828886\"", "checksumFailMoreInfoUrl:\"\"")
         txt = txt.replace("else if(n.agents)r=await this.windowsMainService.openAgentsWindow(a);", "else if(n.agents)return;")
         txt = txt.replace("if(s.agents)return r.openAgentsWindow({context:o,cli:s,initialStartup:!0});", "if(s.agents)return;")
@@ -763,6 +1094,13 @@ if wb_js.exists():
         if old_acc in txt:
             txt = txt.replace(old_acc, new_acc)
             print("Disabled Accounts/Profile activity bar registration in workbench.desktop.main.js")
+
+        # Add VisionX Agentic Chat toggle button to CommandCenterCenter (in search bar)
+        cmd_target = 'De.appendMenuItem(F.CommandCenterCenter,{submenu:F.DebugToolBar,title:"Debug",icon:A.debug,order:1,when:D.and(Fl,CYn)}'
+        chat_cmd_menu = ');De.appendMenuItem(F.CommandCenterCenter,{command:{id:"claude-dev.SidebarProvider.focus",title:"VisionX Agentic Chat",icon:A.chatSparkle},order:101}'
+        if cmd_target in txt and chat_cmd_menu not in txt:
+            txt = txt.replace(cmd_target, cmd_target + chat_cmd_menu)
+            print("Added VisionX Agentic Chat toggle icon to CommandCenterCenter")
             
         # Filter out Accounts from titlebar action toolbar
         old_tb_acc = "T2(this.globalToolbarMenu.getActions(),n,r=>r===MDo)"
@@ -895,8 +1233,8 @@ try:
         "--set-version-string", "LegalCopyright", "Copyright (C) 2026 VisionX Contributors",
         "--set-version-string", "InternalName", "VisionX",
         "--set-version-string", "OriginalFilename", "VisionX.exe",
-        "--set-file-version", "1.6.6.0",
-        "--set-product-version", "1.6.6.0"
+        "--set-file-version", "1.7.4.0",
+        "--set-product-version", "1.7.4.0"
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode == 0:
@@ -907,5 +1245,5 @@ except Exception as e:
     print("Could not run rcedit:", e)
 
 print("==================================================")
-print(" VisionX IDE v1.6.5 build completed successfully! ")
+print(" VisionX IDE v1.7.4 build completed successfully! ")
 print("==================================================")

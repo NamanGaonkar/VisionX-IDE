@@ -7,18 +7,23 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 DIST_DIR = BASE_DIR / "dist"
 SOURCE_DIR = DIST_DIR / "VisionX-win32-x64"
-OUTPUT_ZIP = DIST_DIR / "VisionX-Windows-x64-v1.6.6.zip"
+OUTPUT_ZIP = DIST_DIR / "VisionX-Windows-x64-v1.7.4.zip"
 
 print("==================================================")
-print("     VisionX IDE v1.6.6 - Packaging Release      ")
+print("     VisionX IDE v1.7.4 - Packaging Release      ")
 print("==================================================")
 
 if not SOURCE_DIR.exists():
     print(f"Error: {SOURCE_DIR} does not exist. Run build_visionx.py first!")
     sys.exit(1)
 
-if OUTPUT_ZIP.exists():
-    OUTPUT_ZIP.unlink()
+# Clean all previous release zip files in dist/
+for old_zip in DIST_DIR.glob("VisionX-Windows-x64-*.zip"):
+    try:
+        old_zip.unlink()
+        print(f"Deleted older release zip: {old_zip.name}")
+    except Exception as e:
+        print(f"Note deleting {old_zip.name}: {e}")
 
 print(f"Creating standalone distribution zip: {OUTPUT_ZIP.name}...")
 

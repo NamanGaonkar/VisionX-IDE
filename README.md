@@ -6,19 +6,71 @@
 ### Autonomous AI and Spatial Developer Workspace
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://opensource.org/licenses/MIT)
-[![Release: v1.6.6](https://img.shields.io/badge/Release-v1.6.6-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.6.6)
+[![Release: v1.7.4](https://img.shields.io/badge/Release-v1.7.4-brightgreen.svg)](https://github.com/NamanGaonkar/VisionX-IDE/releases/tag/v1.7.4)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-red.svg)]()
 [![Aesthetics](https://img.shields.io/badge/Aesthetics-Liquid%20Glass-ff5500.svg)]()
-[![AI Engine](https://img.shields.io/badge/AI%20Core-BYOK%20Dynamic%20Discovery-ffd700.svg)]()
+[![AI Core](https://img.shields.io/badge/AI%20Core-VisionX%20Agentic%20Chat-ffd700.svg)]()
 [![Extensions](https://img.shields.io/badge/Extensions-Open%20VSX-blue.svg)](https://open-vsx.org/)
 
-VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a sleek liquid glass dark obsidian aesthetic, native Bring-Your-Own-Key (BYOK) dynamic AI model discovery, an interactive 360-degree orbital 3D project architecture graph in the bottom panel, macOS-style traffic light window controls, and seamless automatic migration of all VS Code extensions and settings.
+VisionX is a high-velocity code editor and developer workspace built on an open-source Code-OSS foundation. Engineered with zero proprietary vendor telemetry, a sleek liquid glass dark obsidian aesthetic with modern rounded island cards, VisionX Agentic Chat as the built-in default autonomous coding agent (file editing, terminal execution, diffs, tool calling, multi-model BYOK, and local Ollama support), an interactive 360-degree orbital 3D project architecture graph in the bottom panel, macOS-style traffic light window controls, and seamless automatic migration of all VS Code extensions and settings.
 
 </div>
 
 ---
 
-## What is New in v1.6.6
+## What is New in v1.7.4
+
+- Complete Rebranding of VisionX Agentic Chat: Fully rebranded About dialog to "VisionX Agentic Chat v4.1.26", updated descriptions to VisionX, redirected documentation and issue links to the official VisionX repository, and updated provider prompt notes.
+- Provider Selection Cleanup: Stripped vendor usage billing and pass entries from the API Provider dropdown in Settings, keeping all real model providers (OpenAI, Anthropic, OpenRouter, DeepSeek, Ollama, Gemini, Bedrock, etc.) clean and unencumbered.
+- Search Bar Chat Toggle Button: Added the chat toggle icon with sparkles directly inside the Command Center search bar, matching the user reference design and enabling instant chat access from the title bar.
+- Restored User VS Code Extensions and Rich Settings: Configured the global `VSCODE_EXTENSIONS` environment variable directly in the main process entrypoint, ensuring all installed extensions load with zero latency. Restored full user settings and themes (including Elegant Red theme, symbols icon theme, and color customizations) from user configuration backups.
+- Maximum Startup Performance: Eliminated extension directory scanning bottlenecks and redundant search paths for instantaneous window and extension loading.
+
+---
+
+## What is New in v1.7.3
+
+- Resolved Webview Black Screen: Fixed AST syntax error in minified `index.js` by preserving closures and delegating visual rebranding to declarative stylesheets. Verified with `node --check` validation during build.
+- Accelerated IDE Startup and Eliminated Extension Host Freezes: Removed multi-directory duplicate junction links across `%APPDATA%` and `%USERPROFILE%`. Extensions now load cleanly without recursive scanning delays, restoring instant launch times.
+- Complete Taskbar Jump List Purge: Thoroughly unlinked stale `1ced32d74a95c7bc` and `437bf6a9c72f8612` jump list caches, completely removing the legacy "Agents Window" task from the Windows taskbar right-click context menu.
+- Title Bar Search Bar Chat Button: Integrated glowing VisionX "V" emblem button directly beside the Command Center search bar for instant toggling of VisionX Agentic Chat.
+- Rounded Modern Cards and Island Aesthetics: Applied cohesive rounded cards across editor groups, terminal panels, sidebars, and chat webview inputs matching modern VS Code UI styling.
+- Cleaned Provider Selection: Kept all real AI providers (Ollama, Anthropic, OpenRouter, OpenAI, Bedrock, Gemini, DeepSeek, etc.) while eliminating vendor account sign-in requirements and social links.
+
+---
+
+## What is New in v1.7.2
+
+- Fixed Activity Bar View Container Registration: Restored the proper `activitybar` view container contribution for VisionX Agentic Chat, ensuring the view and its focus commands are fully registered by the VS Code engine.
+- Restored Workbench Panel and Sidebar Layout: Removed restrictive container overrides from `.part.sidebar`, `.part.auxiliarybar`, and `.part.panel` that blocked panels and sashes from opening, resizing, and rendering webviews.
+- Fixed Title Bar Command Center Chat Toggle Button: Bound `claude-dev.SidebarProvider.focus` with dark/light glowing flame V icon definitions and explicit activation events, restoring one-click chat focusing directly from the title bar.
+- Restored 3D Architecture Graph Rendering: Guaranteed proper viewport dimensions and rendering context for the 3D orbital architecture graph in the bottom panel bar.
+- Cleaned CSS Selectors: Removed invalid non-standard pseudo-selectors that interfered with stylesheet compilation.
+
+---
+
+## What is New in v1.7.1
+
+- Rebranded VisionX Agentic Chat: Replaced all legacy robot head icons with the official glowing VisionX flame/V emblem and updated user-facing headers to "What can VisionX do for you?" and "VisionX Agentic Chat".
+- Title Bar Command Center Chat Toggle Button: Added a dedicated glowing VisionX "V" icon button right beside the Command Center search bar in the title bar for instant one-click toggle/focus of the agentic chat.
+- Modern Rounded Island Layout: Upgraded IDE workbench panels (Side Bar, Auxiliary Bar, Panel, and Editor Groups) into modern rounded floating cards (`border-radius: 10px`, crisp borders, subtle margins/shadows) inspired by modern cursor/island design.
+- Streamlined Chat Navigation: Stripped the Account profile button from the chat header bar, eliminated ClinePass and external account sign-in requirements, and removed external social links (X/Twitter, Discord, Reddit).
+- Cleaned Provider Selection: Removed internal `cline` (usage-billing) and `cline-pass` from the provider list while keeping all real AI providers (Ollama, Anthropic, OpenRouter, OpenAI, Bedrock, Gemini, DeepSeek, etc.) 100% intact.
+- Windows Taskbar Jump List Purge: Completely eliminated the legacy "Agents Window" task from the Windows taskbar right-click context menu by purifying both `CustomDestinations` and `AutomaticDestinations` caches.
+
+---
+
+## What is New in v1.7.0
+
+- Built-in Cline Agentic Chat: Fully replaced the earlier custom chat with Cline (Apache 2.0, version 4.1.26) as the built-in default agentic chat, mirroring GitHub Copilot Chat's integration in VS Code without requiring manual user installation.
+- Copilot-Style Secondary Sidebar Placement: Pinned Cline to the secondary (right) sidebar container titled "Chat", automatically opened on initial launch.
+- Dedicated Title Bar & Command Center Button: Accessible with one click directly from the Command Center navigation toolbar in the title bar.
+- Global Keyboard Shortcut: Focused instantly via `Ctrl+Alt+I` (`Cmd+Alt+I` on macOS).
+- Full Autonomous Agent Capabilities: Terminal command execution with approval guards, multi-file inspection and editing, live diff reviews, browser automation, MCP (Model Context Protocol) tool integration, and plan/act modes.
+- Universal BYOK and Local Ollama Architecture: Native support for all top providers (Anthropic, OpenRouter, OpenAI, Google Gemini, AWS Bedrock, Mistral, DeepSeek) and local Ollama (`http://localhost:11434`) with zero account sign-in required and zero personal keys bundled.
+- Complete Telemetry Neutralization: All PostHog and Langfuse telemetry streams in Cline and VisionX are disabled by default (`telemetry.telemetryLevel: off`, `telemetrySetting: disabled`).
+- Standalone 3D Architecture Graph Extension: Decoupled the 3D Project Architecture Graph into its own dedicated built-in extension (`visionx-project-graph`) in the bottom panel bar with full cross-file dependency scanning and camera controls.
+- Complete Old Chat Purge: Completely deleted all obsolete custom chat webviews, scripts, commands, and providers, leaving zero dead code or broken bindings.
 
 - Native GitHub Copilot & VS Code Language Model API Detection: Added direct integration with VS Code's native `vscode.lm` language model architecture. Automatically discovers and communicates with GitHub Copilot Chat models and registered language model providers without manual API configuration.
 - Real Model Detection with Intelligent Filtering: Completely purged deceptive hardcoded fallback model lists. Provider scanning now queries actual endpoints and applies strict conversational filtering to strip out embeddings, audio/whisper/tts, moderation, and image models, presenting only verified chat and code generation models.

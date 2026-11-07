@@ -14,7 +14,7 @@ EXE_PATH = INSTALL_DIR / "VisionX.exe"
 BIN_PATH = INSTALL_DIR / "bin"
 
 print("==================================================")
-print("     VisionX IDE v1.6.6 - Local Windows Re-installer ")
+print("     VisionX IDE v1.7.4 - Local Windows Re-installer ")
 print("==================================================")
 
 if not DIST_DIR.exists():
@@ -23,7 +23,7 @@ if not DIST_DIR.exists():
 
 # 1. Terminate any running VisionX instances
 print("Ensuring VisionX is completely stopped...")
-subprocess.run(["taskkill", "/F", "/IM", "VisionX.exe"], capture_output=True)
+subprocess.run(["taskkill", "/F", "/IM", "VisionX.exe", "/T"], capture_output=True)
 time.sleep(1)
 
 # 2. Clean install directory
@@ -35,7 +35,7 @@ if INSTALL_DIR.exists():
         print(f"Note during cleanup: {e}")
 
 INSTALL_DIR.mkdir(parents=True, exist_ok=True)
-print("Copying fresh VisionX v1.6.6 binaries...")
+print("Copying fresh VisionX v1.7.3 binaries...")
 shutil.copytree(DIST_DIR, INSTALL_DIR, dirs_exist_ok=True)
 print("Binaries copied successfully.")
 
@@ -49,7 +49,7 @@ if clp_dir.exists():
     except Exception:
         pass
 
-# Clean stale Windows Jump List destination files referencing --agents or Agents Window
+# Clean stale Windows Jump List destination files referencing --agents or Agents Window or sessions.ico
 appdata_recent = appdata / "Microsoft" / "Windows" / "Recent"
 for d in ["CustomDestinations", "AutomaticDestinations"]:
     folder = appdata_recent / d
@@ -57,7 +57,8 @@ for d in ["CustomDestinations", "AutomaticDestinations"]:
         for f in folder.iterdir():
             try:
                 content = f.read_bytes()
-                if b"--agents" in content or "Agents Window".encode("utf-16le") in content:
+                if (b"--agents" in content or "Agents Window".encode("utf-16le") in content 
+                    or b"sessions.ico" in content or "1ced32d74a95c7bc" in f.name or "437bf6a9c72f8612" in f.name):
                     f.unlink(missing_ok=True)
                     print(f"Purged stale jump list cache: {f.name}")
             except Exception:
@@ -88,6 +89,24 @@ $StartLnk.Save()
 """
 subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd], capture_output=True, timeout=15)
 
+# Also update pinned taskbar shortcuts
+taskbar_pins = appdata / "Microsoft" / "Internet Explorer" / "Quick Launch" / "User Pinned" / "TaskBar"
+if taskbar_pins.exists():
+    for lnk_name in ["VisionX IDE.lnk", "VisionX.lnk"]:
+        t_lnk = taskbar_pins / lnk_name
+        if t_lnk.exists():
+            ps_taskbar = f"""
+$WshShell = New-Object -ComObject WScript.Shell
+$Lnk = $WshShell.CreateShortcut('{t_lnk}')
+$Lnk.TargetPath = '{EXE_PATH}'
+$Lnk.IconLocation = '{ICON_PATH},0'
+$Lnk.Description = 'VisionX IDE'
+$Lnk.WorkingDirectory = '{INSTALL_DIR}'
+$Lnk.Save()
+"""
+            subprocess.run(["powershell", "-NoProfile", "-Command", ps_taskbar], capture_output=True, timeout=10)
+            print(f"Updated pinned taskbar shortcut: {lnk_name}")
+
 # 5. PATH Registration
 print("Verifying User PATH...")
 ps_path = f"""
@@ -98,58 +117,53 @@ if (-not $curr.Contains('{str(BIN_PATH)}')) {{
 """
 subprocess.run(["powershell", "-NoProfile", "-Command", ps_path], capture_output=True, timeout=10)
 
-# 6. Automatically migrate VS Code settings and extensions
-print("Migrating Visual Studio Code settings and extensions to VisionX...")
+# 6. Clean redundant junction loops and migrate VS Code settings cleanly
+print("Migrating Visual Studio Code settings cleanly to VisionX...")
 userprofile = Path(os.environ.get("USERPROFILE", ""))
 vscode_user = appdata / "Code" / "User"
 visionx_user_targets = [
     appdata / "VisionX" / "User",
-    appdata / ".visionx" / "User",
-    userprofile / ".visionx" / "User",
-    userprofile / "VisionX" / "User"
-]
-vscode_ext = userprofile / ".vscode" / "extensions"
-visionx_ext_targets = [
-    userprofile / ".visionx" / "extensions",
-    userprofile / "VisionX" / "extensions",
-    appdata / "VisionX" / "extensions"
+    userprofile / ".visionx" / "User"
 ]
 
+# Clean up redundant duplicate junction folders that caused extension host freezes
+for redundant in [userprofile / "VisionX" / "extensions", appdata / "VisionX" / "extensions"]:
+    if redundant.exists():
+        try:
+            for item in redundant.iterdir():
+                if item.is_dir():
+                    subprocess.run(["cmd", "/c", "rmdir", str(item)], capture_output=True)
+            shutil.rmtree(redundant, ignore_errors=True)
+            print(f"Cleaned redundant directory: {redundant.name}")
+        except Exception:
+            pass
+
 if vscode_user.exists():
+    best_settings = vscode_user / "settings.json"
+    bak_candidates = sorted(vscode_user.glob("settings.json.*.bak"), key=lambda f: f.stat().st_size, reverse=True)
+    if bak_candidates and (not best_settings.exists() or best_settings.stat().st_size < bak_candidates[0].stat().st_size):
+        best_settings = bak_candidates[0]
+        print(f"Restoring rich settings from backup: {best_settings.name} ({best_settings.stat().st_size} bytes)")
+        try:
+            shutil.copy2(best_settings, vscode_user / "settings.json")
+        except Exception:
+            pass
+
     for target_user in visionx_user_targets:
         target_user.mkdir(parents=True, exist_ok=True)
         for fname in ["settings.json", "keybindings.json", "mcp.json", "chatLanguageModels.json", "tasks.json"]:
-            src = vscode_user / fname
-            dest = target_user / fname
-            if src.exists():
-                shutil.copy2(src, dest)
+            if fname == "settings.json" and best_settings.exists():
+                shutil.copy2(best_settings, target_user / fname)
+            else:
+                src = vscode_user / fname
+                dest = target_user / fname
+                if src.exists():
+                    shutil.copy2(src, dest)
         snip_src = vscode_user / "snippets"
         if snip_src.exists():
             shutil.copytree(snip_src, target_user / "snippets", dirs_exist_ok=True)
     print("Migrated settings, keybindings, and snippets from VS Code to VisionX user profiles.")
 
-if vscode_ext.exists():
-    linked_exts = 0
-    for target_ext in visionx_ext_targets:
-        target_ext.mkdir(parents=True, exist_ok=True)
-        ext_json = vscode_ext / "extensions.json"
-        if ext_json.exists():
-            shutil.copy2(ext_json, target_ext / "extensions.json")
-        for item in vscode_ext.iterdir():
-            if item.is_dir() and not item.name.startswith("."):
-                dest_item = target_ext / item.name
-                if not dest_item.exists():
-                    res = subprocess.run(["cmd", "/c", "mklink", "/J", str(dest_item), str(item)], capture_output=True)
-                    if res.returncode == 0:
-                        linked_exts += 1
-                    else:
-                        try:
-                            shutil.copytree(item, dest_item, dirs_exist_ok=True)
-                            linked_exts += 1
-                        except Exception:
-                            pass
-    print(f"Migrated and linked {linked_exts} extensions across VisionX target directories.")
-
 print("==================================================")
-print(" VisionX IDE v1.6.6 Installed Locally!            ")
+print(" VisionX IDE v1.7.4 Installed Locally!            ")
 print("==================================================")
